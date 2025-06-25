@@ -1,0 +1,4 @@
+#Sat May 10 18:29:34 CEST 2025
+base.0=/home/b1u3-22/VUT/BP-LPED/app/build/app/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

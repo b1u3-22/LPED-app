@@ -1,0 +1,18 @@
+<lint-module
+    format="1"
+    dir="/home/b1u3-22/.pub-cache/hosted/pub.dev/flutter_blue_plus_android-3.0.0/android"
+    name=":flutter_blue_plus_android"
+    type="LIBRARY"
+    maven="com.lib.flutter_blue_plus:flutter_blue_plus_android:1.0"
+    agpVersion="8.7.0"
+    buildFolder="/home/b1u3-22/VUT/BP-LPED/app/build/flutter_blue_plus_android"
+    bootClassPath="/opt/android-sdk/platforms/android-33/android.jar:/opt/android-sdk/build-tools/34.0.0/core-lambda-stubs.jar"
+    javaSourceLevel="1.8"
+    compileTarget="android-33"
+    neverShrinking="true">
+  <lintOptions
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="release"/>
+</lint-module>
