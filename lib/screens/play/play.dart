@@ -88,6 +88,8 @@ class _PlayPageState extends State<PlayPage>{
 
   // TODO: maybe make this function async instead of .then() hellscape
   void _connectDeviceAndSubscribe(BluetoothDevice device) {
+    if (device.isConnected) return; // skip already connected devices
+
     device.connect(timeout: Duration(seconds: 15))
     .then((value) {
       if (!device.isConnected) return; // connection failed
