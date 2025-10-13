@@ -5,9 +5,6 @@
 // 	 Description: 	  This file contains functions and predefined values
 //                    for communication with dice
 //
-
-import 'dart:math';
-
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_list.dart';
 import 'package:app/models/led_mode/led_mode_base.dart';
@@ -25,23 +22,20 @@ abstract class LPEDBluetooth {
   /// Status message type that carries landed side number
   static const int diceNumber = 1;
 
-  /// Status message type that carries number of sides for a dice
-  static const int sidesNumber = 2;
-
   /// Status message type that carries capacitor state of charge
-  static const int capState = 3;
+  static const int capState = 2;
 
   /// Status message type that carries rolling or start of motion
-  static const int rolling = 4;
+  static const int rolling = 3;
 
-  /// Maximum value of capacitor state
-  static const int messageCapStateMax = 255;
-
-  /// Value that represents 0% of charge of capacitor
-  static const int messageCapStateMin = 121;
+  /// Status message type that carries unknown (dice landed on undefined side or other error occured)
+  static const int unknown = 4;
 
   /// Index of the LPED GATT Services
-  static const int gattServiceIndex = 2;
+  static const int gattDiceServiceIndex = 3;
+  static const int gattCapServiceIndex = 2;
+
+  static const int gattCapStateIndex = 0;
 
   /// Index of side blinking characteristic                      
   static const int gattSideBlinkIndex = 0;     
@@ -49,29 +43,30 @@ abstract class LPEDBluetooth {
   /// Index of error blinking characteristic               
   static const int gattErrorBlinkIndex = 1;         
 
-  /// Index of complete (detail) dice definition characteristic          
-  static const int gattDiceDefinitionIndex = 2;               
-
   /// Index of list of supported dice definitions (only ids) characteristic
-  static const int gattSupportedDiceDefinitionIDsIndex = 3;  
+  static const int gattSupportedDiceDefinitionIDsIndex = 2;  
 
   /// Index of current dice definition id characteristic 
-  static const int gattCurrentDiceDefinitionIDIndex = 4;      
+  static const int gattCurrentDiceDefinitionIDIndex = 3;      
 
   /// Index of selected dice definition (only parameters, no sides -> list model) characteristic
-  static const int gattSelectedDiceListDefinitionIndex = 5;   
+  static const int gattSelectedDiceListDefinitionIndex = 4;   
 
   /// Index of GATT characteristic for sending updated dice (header only)/side definitions (requires update header  @see updateHeaderInBytes())
-  static const int gattUpdateIndex = 6;
+  static const int gattUpdateIndex = 5;
 
   /// Index of acceleration values from the die characteristic
-  static const int gattAccelerometerIndex = 7;
+  static const int gattAccelerometerIndex = 6;
 
   // Index of characteristic for sending specific commands to
-  static const int gattCommandIndex = 8;
+  static const int gattCommandIndex = 7;
 
   /// Index of current state of charge of the capacitor in the die
-  static const int gattCapStateIndex = 9;
+  static const int gattCommModeIndex = 8;
+
+  static const int gattDiceNumberIndex = 9;
+
+  static const int gattSelectedSideDefinitionIndex = 10;
 
   /// GATT command that restart dice
   static const int gattCommandRestart = 0;
@@ -124,11 +119,6 @@ abstract class LPEDBluetooth {
     ).toUnsigned(16);
   }
 
-  /// Capacitor state, mapped to 0% - 100% from advertisement message or capacitor state characteristic
-  static double capStateFromMessage(int message) {
-    return max(0, ((((message - messageCapStateMin) / (messageCapStateMax - messageCapStateMin))) * 100));
-  }
-
   /// Create header update from given parameters and return list of integers that represent individual bytes
   static List<int> updateHeaderInBytes(GattUpdateAction action, int diceId, int sideIndex, Updatable? data) {
     List<int> outputByte = [
@@ -144,7 +134,6 @@ abstract class LPEDBluetooth {
   /// Get acceleration vector from message, this will return a list with three integers - [x, y, z]
   static List<int> accStateFromMessage(List<int> byteArray) {
     if (byteArray.length != 6) {
-      print("input not valid: ${byteArray.toString()}");
       
       return [0, 0, 0];
     }
@@ -155,6 +144,14 @@ abstract class LPEDBluetooth {
     }
 
     return outputAccValues;
+  }
+
+  static int diceStatusFromIndication(List<int> byteArray) {
+    return byteArray[0];
+  }
+
+  static int diceNumberFromIndication(List<int> byteArray) {
+    return byteArray[1];
   }
 
   /// Read given characteristic at [characteristicIndex] from given service at [serviceIndex]
@@ -169,7 +166,6 @@ abstract class LPEDBluetooth {
       );
 
     } catch (error) {
-      print("Reading of characteristic $characteristicIndex from service $serviceIndex failed: \n\n ${error.toString()}");
       return GattResultRead(
         successful: false, 
         data: []
@@ -194,7 +190,6 @@ abstract class LPEDBluetooth {
         ); 
       }
 
-      print("Writing to characteristic $characteristicIndex from service $serviceIndex with data: ${data.toString()} failed: \n\n ${error.toString()}");
       return GattResultWrite(
         successful: false, 
       );
@@ -206,43 +201,82 @@ abstract class LPEDBluetooth {
 
   /// Read side blink value from [device] and return it if successful, otherwise null will be returned
   static Future<bool?> readSideBlink(BluetoothDevice device) async {
-    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattSideBlinkIndex);
+    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattSideBlinkIndex);
   
     return result.successful ? result.data[0] == 1 : null;
   }
 
   /// Read error blink value from [device] and return it if successful, otherwise null will be returned
   static Future<bool?> readErrorBlink(BluetoothDevice device) async {
-    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattErrorBlinkIndex);
+    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattErrorBlinkIndex);
+    return result.successful ? result.data[0] == 1 : null;
+  }
+
+  /// Read communication mode value from [device] and return it if successful, otherwise null will be returned
+  static Future<bool?> readCommMode(BluetoothDevice device) async {
+    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattCommModeIndex);
     return result.successful ? result.data[0] == 1 : null;
   }
 
   /// Read current profile ID from [device] and return it if successful, otherwise null will be returned
   static Future<int?> readCurrentDiceID(BluetoothDevice device) async {
-    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattCurrentDiceDefinitionIDIndex);
+    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattCurrentDiceDefinitionIDIndex);
     return result.successful ? result.data[0] : null;
   }
 
   /// Read currently selected profile from [device] and return it if successful, otherwise null will be returned
   static Future<DiceDefinitionDetailModel?> readCurrentDiceDefinition(BluetoothDevice device) async {
-    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattDiceDefinitionIndex);
-    return result.successful ? DiceDefinitionDetailModel.fromIntList(result.data) : null;
+    // read current dice def id
+    int? currentID = await readCurrentDiceID(device);
+    if (currentID == null) return null;
+
+    // select the current dice def header
+    GattResultWrite writeResult = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedDiceListDefinitionIndex, [currentID]);
+    if (!writeResult.successful) return null;
+
+    // read the current dice def header
+    GattResultRead readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedDiceListDefinitionIndex);
+    if (!readResult.successful) return null;
+
+    DiceDefinitionListModel currentDiceProfileHeader = DiceDefinitionListModel.fromIntList(readResult.data); 
+    DiceDefinitionDetailModel currentDiceProfile = DiceDefinitionDetailModel(
+      name: currentDiceProfileHeader.name, 
+      numberOfSides: currentDiceProfileHeader.numberOfSides, 
+      range: currentDiceProfileHeader.range
+    );
+
+
+    // read all sides from the current dice def header
+    for (int side = 0; side < currentDiceProfile.numberOfSides; side++) {
+      writeResult = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedSideDefinitionIndex, [side]);
+      if (!writeResult.successful) return null;
+
+      readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedSideDefinitionIndex);
+      if (!readResult.successful) return null;
+
+      print("SIDE_DEF:");
+      print(readResult.data);
+
+      currentDiceProfile.sides.add(SideDefinitionListModel.fromIntList(readResult.data));
+    }
+
+    return currentDiceProfile;
   }
 
   /// Read headers of all supported profiles from [device] and return it if successful, otherwise null will be returned
   static Future<List<DiceDefinitionListModel>?> readSupportedDiceDefinitions(BluetoothDevice device) async {
     List<DiceDefinitionListModel> supportedDiceDefs = [];
     GattResultWrite writeResult;
-    GattResultRead readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattSupportedDiceDefinitionIDsIndex);
+    GattResultRead readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattSupportedDiceDefinitionIDsIndex);
     if (!readResult.successful) return null;
 
     readResult.data.removeWhere((id) {return id == 0;});  // Remove all 0, which are empty IDs
 
     for (int id in readResult.data) {
-      writeResult = await LPEDBluetooth.writeGATTCharacteristic(device, gattServiceIndex, gattSelectedDiceListDefinitionIndex, [id]);
+      writeResult = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedDiceListDefinitionIndex, [id]);
       if (!writeResult.successful) return null;
 
-      readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattSelectedDiceListDefinitionIndex);
+      readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedDiceListDefinitionIndex);
       if (!readResult.successful) return null;
 
       supportedDiceDefs.add(DiceDefinitionListModel.fromIntList(readResult.data));
@@ -252,20 +286,20 @@ abstract class LPEDBluetooth {
     
   }
 
-  /// Read side blink value from [device] and return it if successful, otherwise null will be returned
-  static Future<double?> readCapState(BluetoothDevice device) async {
-    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattCapStateIndex);
-    if (!result.successful) return null;
-  
-    return LPEDBluetooth.capStateFromMessage(result.data[0]);
-  }
-
   /// Read acceleration vector from [device] and return it if successful, otherwise null will be returned
   static Future<List<int>?> readAccelerometerValues(BluetoothDevice device) async {
-    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattServiceIndex, gattAccelerometerIndex);
+    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattAccelerometerIndex);
     if (!result.successful) return null;
 
     return accStateFromMessage(result.data);
+  }
+
+  /// Read capacitor state value from [device] and return it if successful, otherwise null will be returned
+  static Future<int?> readCapState(BluetoothDevice device) async {
+    GattResultRead result = await LPEDBluetooth.readGATTCharacteristic(device, gattCapServiceIndex, gattCapStateIndex);
+    if (!result.successful) return null;
+
+    return result.data[0];
   }
 
   // ========================================================================================================================
@@ -273,13 +307,19 @@ abstract class LPEDBluetooth {
 
   /// Write new side blink value [blink] to [device], return true if error occurred, otherwise false
   static Future<bool> writeSideBlink(BluetoothDevice device, bool blink) async {
-    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattServiceIndex, gattSideBlinkIndex, [blink ? 1 : 0]);
+    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattSideBlinkIndex, [blink ? 1 : 0]);
     return result.successful;
   } 
 
   /// Write new error blink value [blink] to [device], return true if error occurred, otherwise false
   static Future<bool> writeErrorBlink(BluetoothDevice device, bool blink) async {
-    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattServiceIndex, gattErrorBlinkIndex, [blink ? 1 : 0]);
+    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattErrorBlinkIndex, [blink ? 1 : 0]);
+    return result.successful;
+  }
+
+  /// Write new communication mode value [connectionBased] to [device], return true if error occurred, otherwise false
+  static Future<bool> writeCommMode(BluetoothDevice device, bool connectionBased) async {
+    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattCommModeIndex, [connectionBased ? 1 : 0]);
     return result.successful;
   }
 
@@ -287,7 +327,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeCurrentDiceID(BluetoothDevice device, int id) async {
     if (id == 0) return false;
 
-    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattServiceIndex, gattCurrentDiceDefinitionIDIndex, [id]);
+    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattCurrentDiceDefinitionIDIndex, [id]);
     return result.successful;
   }
 
@@ -295,7 +335,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeAddDiceDefinition(BluetoothDevice device, DiceDefinitionDetailModel newDefinition) async {
     GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(
       device, 
-      gattServiceIndex, 
+      gattDiceServiceIndex, 
       gattUpdateIndex, 
       updateHeaderInBytes(
         GattUpdateAction.diceDefinitionAdd, 
@@ -312,7 +352,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeDeleteDiceDefinition(BluetoothDevice device, int definitionID) async {
     GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(
       device, 
-      gattServiceIndex, 
+      gattDiceServiceIndex, 
       gattUpdateIndex, 
       updateHeaderInBytes(
         GattUpdateAction.diceDefinitionDelete, 
@@ -329,7 +369,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeUpdateDiceDefinition(BluetoothDevice device, DiceDefinitionListModel updatedDefinition) async {
     GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(
       device, 
-      gattServiceIndex, 
+      gattDiceServiceIndex, 
       gattUpdateIndex, 
       updateHeaderInBytes(
         GattUpdateAction.diceDefinitionUpdate, 
@@ -346,7 +386,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeAddSideDefinition(BluetoothDevice device, int diceDefinitionID, SideDefinitionListModel newSideDefinition) async {
     GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(
       device, 
-      gattServiceIndex, 
+      gattDiceServiceIndex, 
       gattUpdateIndex, 
       updateHeaderInBytes(
         GattUpdateAction.sideDefinitionAdd, 
@@ -363,7 +403,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeDeleteSideDefinition(BluetoothDevice device, int diceDefinitionID, int sideDefinitionIndex) async {
     GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(
       device, 
-      gattServiceIndex, 
+      gattDiceServiceIndex, 
       gattUpdateIndex, 
       updateHeaderInBytes(
         GattUpdateAction.sideDefinitionDelete, 
@@ -380,7 +420,7 @@ abstract class LPEDBluetooth {
   static Future<bool> writeUpdateSideDefinition(BluetoothDevice device, int diceDefinitionID, int sideDefinitionIndex, SideDefinitionListModel sideDefinition) async {
     GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(
       device, 
-      gattServiceIndex, 
+      gattDiceServiceIndex, 
       gattUpdateIndex, 
       updateHeaderInBytes(
         GattUpdateAction.sideDefinitionUpdate, 
@@ -396,11 +436,11 @@ abstract class LPEDBluetooth {
   /// Execute [command] in [device], return true if error occurred, otherwise false
   static Future<bool> writeCommand(BluetoothDevice device, int command) async {
     if (command == gattCommandRestart) {
-      await writeGATTCharacteristic(device, gattServiceIndex, gattCommandIndex, [command], timeout: 1, ignoreErrors: true);
+      await writeGATTCharacteristic(device, gattDiceServiceIndex, gattCommandIndex, [command], timeout: 1, ignoreErrors: true);
       return true;
     }
 
-    GattResultWrite result = await writeGATTCharacteristic(device, gattServiceIndex, gattCommandIndex, [command]);
+    GattResultWrite result = await writeGATTCharacteristic(device, gattDiceServiceIndex, gattCommandIndex, [command]);
     return result.successful;
   }
 }

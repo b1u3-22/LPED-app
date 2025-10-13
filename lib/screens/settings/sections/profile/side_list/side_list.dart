@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 class SideList extends StatelessWidget {
   final List<SideDefinitionListModel> sides;
   final Function(int sideIndex) deleteSide;
-  final Function(int sideIndex, int newLedMode) changeSideLedMode;
   final Function(int sideIndex, int newSideNumber) changeSideNumber;
   final Function(int sideIndex) changeSideVector;
 
@@ -21,7 +20,6 @@ class SideList extends StatelessWidget {
     super.key,
     required this.sides,
     required this.deleteSide,
-    required this.changeSideLedMode,
     required this.changeSideNumber,
     required this.changeSideVector
   });
@@ -33,7 +31,6 @@ class SideList extends StatelessWidget {
         for (int sideIndex = 0; sideIndex < sides.length; sideIndex++)
           SideListRow(
             model: sides[sideIndex], 
-            onLedModeChange: (newMode) => changeSideLedMode(sideIndex, newMode), 
             onNumberChange: (newNumber) => changeSideNumber(sideIndex, int.tryParse(newNumber) ?? 0), 
             onDelete: () => deleteSide(sideIndex), 
             onVectorChange: () => changeSideVector(sideIndex)

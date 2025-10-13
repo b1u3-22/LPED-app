@@ -21,7 +21,7 @@ class DeviceCard extends StatefulWidget {
 
   final String name;
   final String mac;
-  final double capState;
+  final int capState;
   final DateTime lastMes;
   final Map<String, int> history;
   final Function() deleteCallback;

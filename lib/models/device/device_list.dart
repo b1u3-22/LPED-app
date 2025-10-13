@@ -3,7 +3,7 @@ import 'package:app/services/storage.dart';
 
 class DeviceListModel extends DeviceBase {
   String name       = "";
-  double capState   = 0.0;
+  int capState      = 100;
   DateTime lastMes  = DateTime.fromMillisecondsSinceEpoch(0);
   int numberOfSides = 6;
   Map<String, int> history = {};
@@ -11,7 +11,7 @@ class DeviceListModel extends DeviceBase {
   DeviceListModel.fromJSON(Map<String, dynamic> json) {
       name = json["name"] as String;
       mac = json["mac"] as String;
-      capState = json["capState"] ?? 0.0;
+      capState = json["capState"] ?? 0;
       lastMes = DateTime.parse(json["lastMes"]);
       numberOfSides = json["sides"] ?? 6;
       

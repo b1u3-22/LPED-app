@@ -59,6 +59,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
   // Dice parameters
   late bool _sideBlink;
   late bool _errorBlink;
+  late bool _commMode;
   late List<DiceDefinitionListModel> _supportedDiceProfiles;
   late int _currentProfileID;
   late DiceDefinitionDetailModel _currentProfile;
@@ -96,6 +97,18 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     });
   }
 
+  /// Change communication mode setting to [newComm]
+  void _setCommMode(bool newComm) {
+    LPEDBluetooth.writeCommMode(_bluetoothDevice, newComm).then((result) {
+      if (result) {
+        setState(() => _errorBlink = newComm);
+      }
+      else {
+        _exitWithError("Failed to change value of side blink");
+      }
+    });
+  }
+
   /// Select new profile with id [newID] as the current one
   void _setCurrentProfileID(int newID) {
     LPEDBluetooth.writeCurrentDiceID(_bluetoothDevice, newID).then((result) {
@@ -121,7 +134,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
           return;
         }
         _reloadCommand();
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
       } 
     );
   }
@@ -343,20 +356,6 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     if (profile.id == _currentProfileID) await _getCurrentProfile();
   }
 
-  /// Change blink mode to [newMode] for side at [sideIndex] inside [profile] and refresh the selected profile and supported profiles
-  void _setSideBlinkMode(DiceDefinitionDetailModel profile, int sideIndex, int newMode) async {
-    setState(() => profile.sides[sideIndex].blinkMode = newMode);
-
-    var result = await LPEDBluetooth.writeUpdateSideDefinition(_bluetoothDevice, profile.id, sideIndex, profile.sides[sideIndex]);
-    if (!result) {
-      Fluttertoast.showToast(msg: "Failed to change blink mode");
-      return;
-    }
-
-    _getSupportedProfiles();
-    if (profile.id == _currentProfileID) await _getCurrentProfile();
-  }
-
   /// Change number to [newNumber] for side at [sideIndex] inside [profile] and refresh the selected profile and supported profiles
   void _setSideNumber(DiceDefinitionDetailModel profile, int sideIndex, int newNumber) async {
     setState(() => profile.sides[sideIndex].number = newNumber);
@@ -438,6 +437,16 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     return false;
   }
 
+  /// Get communication mode from device and update the value
+  Future<bool> _getCommMode() async {
+    var result = await LPEDBluetooth.readCommMode(_bluetoothDevice);
+    if (result == null) {
+      return true;
+    }
+    setState(() => _commMode = result);
+    return false;
+  }
+
   /// Get currently selected profile ID and update the value
   Future<bool> _getCurrentProfileID() async {
     var result = await LPEDBluetooth.readCurrentDiceID(_bluetoothDevice);
@@ -482,6 +491,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     do {
       result = await _getSideBlink();
       result |= await _getErrorBlink();
+      result |= await _getCommMode();
       result |= await _getCurrentProfileID();
       result |= await _getSupportedProfiles();
       result |= await _getCurrentProfile();
@@ -572,7 +582,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
               // Try to load services
               _bluetoothDevice.discoverServices(timeout: 15)
               .then((value) {
-                if (value.length < LPEDBluetooth.gattServiceIndex) {
+                if (value.length < LPEDBluetooth.gattDiceServiceIndex) {
                   _exitWithError("Connection to ${widget.device.name} failed!");
                 }
                 else {
@@ -642,11 +652,13 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
             deviceName: widget.device.name, 
             sideBlink: _sideBlink, 
             errorBlink: _errorBlink, 
+            commMode: _commMode,
             supportedProfiles: _supportedDiceProfiles, 
             currentProfileID: _currentProfileID, 
             changeDeviceName: _setDeviceName, 
             sideBlinkChanged: _setSideBlink, 
             errorBlinkChanged: _setErrorBlink, 
+            commModeChanged: _setCommMode,
             selectDiceProfile: _setCurrentProfileID, 
             commandRestart: _restartCommand, 
             commandFactoryReset: _factoryResetCommand, 
@@ -662,8 +674,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
             changeProfileName: _renameProfile, 
             changeSensitivity: _setProfileSensitivity, 
             addSide: _startAddingSideToProfile, 
-            deleteSide: _startDeletingSideFromProfile, 
-            changeSideLedMode: _setSideBlinkMode, 
+            deleteSide: _startDeletingSideFromProfile,
             changeSideNumber: _setSideNumber, 
             changeSideVector: _startChangingSideVector
           )

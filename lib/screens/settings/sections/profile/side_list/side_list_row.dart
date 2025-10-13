@@ -6,7 +6,6 @@
 //
 
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/settings/sections/profile/led_mode_drop_down/led_mode_drop_down.dart';
 import 'package:app/global/settings_field.dart';
 import 'package:app/services/bluetooth/bluetooth.dart';
 import 'package:app/typography.dart';
@@ -14,15 +13,13 @@ import 'package:flutter/material.dart';
 
 class SideListRow extends StatelessWidget {
   final SideDefinitionListModel model;
-  final Function(int newLedMode) onLedModeChange;
   final Function(String newNumber) onNumberChange;
   final Function() onDelete;
   final Function() onVectorChange; 
 
   const SideListRow({
     super.key,
-    required this.model, 
-    required this.onLedModeChange,
+    required this.model,
     required this.onNumberChange,
     required this.onDelete,
     required this.onVectorChange
@@ -52,10 +49,6 @@ class SideListRow extends StatelessWidget {
                 Text("Y: ${(model.vector[1] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
                 Text("Z: ${(model.vector[2] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
               ],
-            ),
-            LedModeDropDown(
-              value: model.blinkMode,
-              newModeSelected: onLedModeChange
             ),
             Row(
               children: [

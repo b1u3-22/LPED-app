@@ -28,6 +28,7 @@ class GeneralSection extends StatelessWidget {
   final String deviceMac;
   final bool sideBlink;
   final bool errorBlink;
+  final bool commMode;
   final List<DiceDefinitionListModel> supportedProfiles;
   final int currentProfileID;
   
@@ -36,6 +37,7 @@ class GeneralSection extends StatelessWidget {
   final Function(String newName) changeDeviceName;
   final Function(bool newBlink) sideBlinkChanged;
   final Function(bool newBlink) errorBlinkChanged;
+  final Function (bool newCommMode) commModeChanged;
   final Function(int id) selectDiceProfile;
   final Function() commandRestart;
   final Function() commandFactoryReset;
@@ -52,12 +54,14 @@ class GeneralSection extends StatelessWidget {
     required this.deviceMac,
     required this.sideBlink, 
     required this.errorBlink, 
+    required this.commMode,
     required this.supportedProfiles,
     required this.currentProfileID,
     required this.clearHistoryCallback,
     required this.changeDeviceName,
     required this.sideBlinkChanged,
     required this.errorBlinkChanged,
+    required this.commModeChanged,
     required this.selectDiceProfile,
     required this.commandRestart,
     required this.commandFactoryReset,
@@ -91,6 +95,13 @@ class GeneralSection extends StatelessWidget {
           right: Switch(
             value: errorBlink, 
             onChanged: (newBlink) => errorBlinkChanged(newBlink)
+          )
+        ),
+        SettingsRow(
+          left: SettingsLabel(text: "Connected mode"), 
+          right: Switch(
+            value: commMode, 
+            onChanged: (newMode) => commModeChanged(newMode)
           )
         ),
         SettingsRow(

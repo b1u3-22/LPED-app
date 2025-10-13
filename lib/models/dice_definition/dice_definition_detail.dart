@@ -23,7 +23,6 @@ class DiceDefinitionDetailModel extends DiceDefinitionListModel {
         i < DiceDefinitionBaseModel.sidesPosition + DiceDefinitionBaseModel.sidesMaxLen * SideDefinitionBaseModel.totalLen;
         i += SideDefinitionBaseModel.totalLen
       ) {
-        print(byteArray.sublist(i, i + SideDefinitionBaseModel.totalLen).toString());
         sides.add(
           SideDefinitionListModel.fromIntList(byteArray.sublist(i, i + SideDefinitionBaseModel.totalLen))
         );

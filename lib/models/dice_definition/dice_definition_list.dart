@@ -33,8 +33,6 @@ class DiceDefinitionListModel extends DiceDefinitionBaseModel {
     range |= byteArray.elementAt(
       DiceDefinitionBaseModel.rangePosition
     );
-
-    print("id: $id, sides: $numberOfSides, range: $range");
   }
   
   DiceDefinitionListModel({required this.name, required this.id, required this.numberOfSides, required this.range});

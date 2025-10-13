@@ -1,13 +1,21 @@
+import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/side_definition/side_definition_base.dart';
 
 class SideDefinitionListModel extends SideDefinitionBaseModel {
-  late int blinkMode;
   late int number;
+  late AnimationDetailModel animation;
   late List<int> vector;
 
   SideDefinitionListModel.fromIntList(List<int> byteArray) {
-    blinkMode = byteArray.elementAt(SideDefinitionBaseModel.blinkModePosition);
     number = byteArray.elementAt(SideDefinitionBaseModel.numberPosition);
+
+    animation = AnimationDetailModel.fromIntList(
+      byteArray.sublist(
+        SideDefinitionBaseModel.animationPosition, 
+        SideDefinitionBaseModel.animationPosition + SideDefinitionBaseModel.animationSize
+      )
+    );
+
     vector = [];
     for ( 
           int i = SideDefinitionBaseModel.vectorPosition; 
@@ -20,11 +28,11 @@ class SideDefinitionListModel extends SideDefinitionBaseModel {
         }
   }
 
-  SideDefinitionListModel({required this.blinkMode, required this.number, required this.vector});
+  SideDefinitionListModel({required this.number, required this.vector});
   
   SideDefinitionListModel.from(SideDefinitionListModel original) : 
-    blinkMode = original.blinkMode, 
     number = original.number,
+    animation = original.animation,
     vector = List<int>.from(original.vector);
 
   @override
@@ -32,7 +40,8 @@ class SideDefinitionListModel extends SideDefinitionBaseModel {
     List<int> outputByte = [];
 
     outputByte.add(number);
-    outputByte.add(blinkMode);
+
+    outputByte.addAll(animation.toByteArray());
 
     for (int vvector in vector) {
       outputByte.add(vvector & 0xFF);       // add LSB of vector

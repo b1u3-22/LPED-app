@@ -39,14 +39,14 @@ class _AddDiceDefinitionDialogState extends State<AddDiceDefinitionDialog> {
 
   int currentSideIndex = 0;
   int multiplier = 1;
-  SideDefinitionListModel currentSide = SideDefinitionListModel(blinkMode: 0, number: 1, vector: [0, 0, 0]);
+  SideDefinitionListModel currentSide = SideDefinitionListModel(number: 1, vector: [0, 0, 0]);
 
   void _changeNumberOfSides(int newNumberOfSides, int multiplier) {
     setState(() {
       newProfile.numberOfSides = newNumberOfSides;
       newProfile.sides.clear();
       for (int i = 0; i < newNumberOfSides; i++) {
-        newProfile.sides.add(SideDefinitionListModel(blinkMode: 1, number: (i + 1) * multiplier, vector: [0, 0, 0]));
+        newProfile.sides.add(SideDefinitionListModel(number: (i + 1) * multiplier, vector: [0, 0, 0]));
       }
     });
   }

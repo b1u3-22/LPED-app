@@ -14,10 +14,13 @@ import 'package:flutter/material.dart';
 
 class PlayCard extends StatefulWidget {
 
+  static const rollingValue = -1;
+  static const unknownValue = -2;
+
   final String mac;
   final String name;
   final int number;
-  final double capState;
+  final int capState;
   final bool visible;
   final bool included;
   final Map<String, int> history;
@@ -91,7 +94,7 @@ class _PlayCardState extends State<PlayCard>{
           alignment: Alignment.center,
           child: Text(
             widget.number > 0 ? widget.number.toString() :
-            widget.number == -1 ? "R" : "U", 
+            widget.number == PlayCard.rollingValue ? "R" : "U", 
             style: widget.included ? 
               TextStyle(
                 fontSize: titleTextStyle.fontSize,

@@ -11,7 +11,7 @@ class ListOfDevicePlayModels extends ValueNotifier<List<DevicePlayModel>> {
     notifyListeners();
   }
 
-  void updateCapState(double newCapState, int index) {
+  void updateCapState(int newCapState, int index) {
     if (index < 0 || index >= value.length) return;
     value[index].updateCapState(newCapState);
     notifyListeners();

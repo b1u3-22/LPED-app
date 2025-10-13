@@ -86,6 +86,69 @@ class _PlayPageState extends State<PlayPage>{
     );    
   }
 
+  // TODO: maybe make this function async instead of .then() hellscape
+  void _connectDeviceAndSubscribe(BluetoothDevice device) {
+    device.connect(timeout: Duration(seconds: 15))
+    .then((value) {
+      if (!device.isConnected) return; // connection failed
+
+      int deviceIndex = _getDeviceIndexByMac(device.remoteId.toString());
+      if (deviceIndex < 0) return; // Device not found in our list
+
+      // check comm mode of that device, since it might not have commMode = true
+      // but just wants to connect for configuration 
+      // (commMode = false and placed in dock for v2 or button long pressed for v1)
+      LPEDBluetooth.readCommMode(device).then((value) {
+        if (value ?? false) {
+          // set the accelerometer to int mode in case it was left in trigger
+          LPEDBluetooth.writeCommand(device, LPEDBluetooth.gattCommandEnableDockConn).then((value) {
+            // set cap state notification callback 
+            devices[deviceIndex].capStateNotifications = 
+              device.servicesList[LPEDBluetooth.gattCapServiceIndex]
+                    .characteristics[LPEDBluetooth.gattCapStateIndex]
+                    .onValueReceived.listen((value) {
+                      devices[deviceIndex].updateCapState(value[0]);
+                    });
+
+            // stop the notification subscription when the device disconnects 
+            device.cancelWhenDisconnected(devices[deviceIndex].capStateNotifications!);
+            
+            // subscribe to cap state notifications 
+            device.servicesList[LPEDBluetooth.gattCapServiceIndex]
+                  .characteristics[LPEDBluetooth.gattCapStateIndex]
+                  .setNotifyValue(true);
+
+            // set dice number notification callback 
+            devices[deviceIndex].diceNumberIndications = 
+              device.servicesList[LPEDBluetooth.gattDiceServiceIndex]
+                    .characteristics[LPEDBluetooth.gattDiceNumberIndex]
+                    .onValueReceived.listen((value) {
+                      switch (LPEDBluetooth.diceStatusFromIndication(value)) {
+                        case LPEDBluetooth.diceNumber: 
+                          devices[deviceIndex].updateNumber(LPEDBluetooth.diceNumberFromIndication(value));
+                          break;
+                        case LPEDBluetooth.rolling:
+                          devices[deviceIndex].updateNumber(PlayCard.rollingValue);
+                          break;
+                        case LPEDBluetooth.unknown:
+                          devices[deviceIndex].updateNumber(PlayCard.unknownValue);
+                          break;
+                      }
+                    });
+
+            // stop the notification subscription when the device disconnects 
+            device.cancelWhenDisconnected(devices[deviceIndex].diceNumberIndications!);
+
+            // subscribe to cap state notifications 
+            device.servicesList[LPEDBluetooth.gattDiceServiceIndex]
+                  .characteristics[LPEDBluetooth.gattDiceNumberIndex]
+                  .setNotifyValue(true);
+          });
+        }
+      });
+    });
+  }
+
   /// Start scanning for the non-connectable advertisement from all devices where we saved the MAC address
   void _startScan() {
     FlutterBluePlus.startScan(
@@ -115,6 +178,15 @@ class _PlayPageState extends State<PlayPage>{
       int deviceIndex;
 
       for (ScanResult result in results) {
+        // check if device is connectable (indicating connection base comunication mode)
+        if (result.advertisementData.connectable) {
+          _connectDeviceAndSubscribe(result.device);
+
+          // skip the rest of the steps that are for non-connectable dice
+          continue;
+        }
+
+
         deviceIndex = _getDeviceIndexByMac(result.device.remoteId.toString());
         // If device was not found, continue with next result, but this shouldn't happen
         // since we already filter by only our saved macs
@@ -132,10 +204,12 @@ class _PlayPageState extends State<PlayPage>{
           case LPEDBluetooth.diceNumber: 
             devices[deviceIndex].updateNumber(message);
           case LPEDBluetooth.capState:
-            devices[deviceIndex].updateCapState(LPEDBluetooth.capStateFromMessage(message));
+            devices[deviceIndex].updateCapState(message);
           case LPEDBluetooth.rolling:
-            devices[deviceIndex].updateNumber(-1);
-            devices[deviceIndex].updateCapState(LPEDBluetooth.capStateFromMessage(message)); 
+            devices[deviceIndex].updateNumber(PlayCard.rollingValue);
+            devices[deviceIndex].updateCapState(message); 
+          case LPEDBluetooth.unknown:
+            devices[deviceIndex].updateNumber(PlayCard.unknownValue);
         }
       }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:app/models/device/device_list.dart';
 import 'package:app/services/storage.dart';
 
@@ -6,6 +8,8 @@ class DevicePlayModel extends DeviceListModel {
   bool visible = true;
   bool included = true;
   int id = 0;
+  StreamSubscription<List<int>>? capStateNotifications;
+  StreamSubscription<List<int>>? diceNumberIndications;
 
   DevicePlayModel.fromJSON(super.json) : super.fromJSON();
 
@@ -25,7 +29,7 @@ class DevicePlayModel extends DeviceListModel {
     id = newId;
   }
 
-  void updateCapState(double newCapState) {
+  void updateCapState(int newCapState) {
     if (newCapState < 0) return;
     capState = newCapState;
     lastMes = DateTime.now();

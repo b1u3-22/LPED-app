@@ -8,7 +8,6 @@
 
 import 'package:app/global/stepped_dialog/stepped_dialog_step_base.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/settings/sections/profile/led_mode_drop_down/led_mode_drop_down.dart';
 import 'package:app/global/settings_field.dart';
 import 'package:app/screens/settings/sections/settings_label.dart';
 import 'package:app/screens/settings/sections/settings_row.dart';
@@ -17,13 +16,11 @@ import 'package:flutter/material.dart';
 class SelectionStep extends SteppedDialogStepBase {
   final SideDefinitionListModel side;
   final Function(int newNumber) changeSideNumber;
-  final Function(int ledMode) changeLedMode;
 
   const SelectionStep({
     super.key,
     required this.side,
-    required this.changeSideNumber, 
-    required this.changeLedMode
+    required this.changeSideNumber
   });
   
   @override
@@ -52,13 +49,6 @@ class SelectionStep extends SteppedDialogStepBase {
             ),
           )
         ),
-        SettingsRow(
-          left: SettingsLabel(text: "Blink mode"), 
-          right: LedModeDropDown(
-            value: side.blinkMode,
-            newModeSelected: changeLedMode 
-          )
-        )
       ],
     );
   }

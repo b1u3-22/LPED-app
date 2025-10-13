@@ -25,7 +25,6 @@ class ProfileSection extends StatelessWidget {
   final Function(DiceDefinitionDetailModel model, int newSensitivity) changeSensitivity;
   final Function(DiceDefinitionDetailModel model) addSide;
   final Function(DiceDefinitionDetailModel model, int sideIndex) deleteSide;
-  final Function(DiceDefinitionDetailModel model, int sideIndex, int newMode) changeSideLedMode;
   final Function(DiceDefinitionDetailModel model, int sideIndex, int newNumber) changeSideNumber;
   final Function(DiceDefinitionDetailModel model, int sideIndex) changeSideVector;
 
@@ -37,7 +36,6 @@ class ProfileSection extends StatelessWidget {
     required this.changeSensitivity,
     required this.addSide,
     required this.deleteSide,
-    required this.changeSideLedMode,
     required this.changeSideNumber,
     required this.changeSideVector
   });
@@ -75,7 +73,6 @@ class ProfileSection extends StatelessWidget {
         SideList(
           sides: profile.sides, 
           deleteSide: (sideIndex) => deleteSide(profile, sideIndex), 
-          changeSideLedMode: (sideIndex, newMode) => changeSideLedMode(profile, sideIndex, newMode), 
           changeSideNumber: (sideIndex, newNumber) => changeSideNumber(profile, sideIndex, newNumber), 
           changeSideVector: (sideIndex) => changeSideVector(profile, sideIndex)
         )

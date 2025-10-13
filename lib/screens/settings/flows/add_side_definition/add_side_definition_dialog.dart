@@ -36,7 +36,6 @@ class _AddSideDefinitionDialogState extends State<AddSideDefinitionDialog>{
   @override
   void initState() {
     newSide = SideDefinitionListModel(
-      blinkMode: 0, 
       number: widget.diceProfile.numberOfSides + 1, 
       vector: [0, 0, 0]
     );
@@ -51,8 +50,7 @@ class _AddSideDefinitionDialogState extends State<AddSideDefinitionDialog>{
       steps: [
         SelectionStep(
           side: newSide, 
-          changeSideNumber: (newNumber) => setState(() => newSide.number = newNumber), 
-          changeLedMode: (newLedMode) => setState(() => newSide.blinkMode = newLedMode)
+          changeSideNumber: (newNumber) => setState(() => newSide.number = newNumber)
         ),
         VectorStep(
           side: newSide, 
