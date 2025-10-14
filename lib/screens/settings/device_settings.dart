@@ -101,7 +101,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
   void _setCommMode(bool newComm) {
     LPEDBluetooth.writeCommMode(_bluetoothDevice, newComm).then((result) {
       if (result) {
-        setState(() => _errorBlink = newComm);
+        setState(() => _commMode = newComm);
       }
       else {
         _exitWithError("Failed to change value of side blink");

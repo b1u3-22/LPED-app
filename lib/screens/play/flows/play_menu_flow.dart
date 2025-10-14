@@ -20,7 +20,8 @@ List<PopupMenuItem> _menuContent(
     Function(String mac, bool newVisibility) visibilityCallback, 
     Function(String mac, bool newInclusion) inclusionCallback,
     Map<String, int> history,
-    Function() clearHistoryCallback
+    Function() clearHistoryCallback,
+    Function(String mac) identifyCallback
   ) {
   return [
     PopupMenuItem(
@@ -129,6 +130,21 @@ List<PopupMenuItem> _menuContent(
             ],
           )
         )
+      ),
+      PopupMenuItem(
+        child: TextButton(
+          onPressed: () {
+            identifyCallback(mac);
+            Navigator.of(context).pop();
+          }, 
+          child: Row(
+            children: [
+              Icon(Icons.search),
+              SizedBox(width: 5,),
+              Text("Identify", style: textStyle,)
+            ],
+          )
+        )
       )
   ];
 }
@@ -145,7 +161,8 @@ Future<void> showPlayMenu(
     Function(String mac, bool newVisibility) visibilityCallback, 
     Function(String mac, bool newInclusion) inclusionCallback,
     Map<String, int> history,
-    Function() clearHistoryCallback
+    Function() clearHistoryCallback,
+    Function(String mac) identifyCallback
   ) { 
 
   return showMenu(
@@ -166,7 +183,8 @@ Future<void> showPlayMenu(
       visibilityCallback, 
       inclusionCallback,
       history,
-      clearHistoryCallback
+      clearHistoryCallback,
+      identifyCallback
     )
   );
 }

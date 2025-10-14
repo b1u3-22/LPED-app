@@ -7,6 +7,7 @@
 
 import 'dart:async';
 import 'package:app/global/history_dialog/clear_history_confirmation/clear_history_confirmation_flow.dart';
+import 'package:app/models/animation/animation/predefined_animations.dart';
 import 'package:app/services/bluetooth/bluetooth.dart';
 import 'package:app/screens/play/sections/play_card.dart';
 import 'package:app/models/device/device_play.dart';
@@ -28,6 +29,7 @@ class _PlayPageState extends State<PlayPage>{
   late StreamSubscription<BluetoothAdapterState> adapterStateSubscription;
 
   List<DevicePlayModel> devices = Storage().getAllDevicesPlayModels();
+  List<String> _devicesBlacklist = [];
   int _sum = 0;
 
   /// Calculate sum from all currently landed numbers
@@ -86,70 +88,132 @@ class _PlayPageState extends State<PlayPage>{
     );    
   }
 
-  // TODO: maybe make this function async instead of .then() hellscape
-  void _connectDeviceAndSubscribe(BluetoothDevice device) {
-    if (device.isConnected) return; // skip already connected devices
+  void identifyDevice(String mac) {
+    // TODO: add popup with error
+    if (_getDeviceIndexByMac(mac) == -1) return;
 
-    device.connect(timeout: Duration(seconds: 15))
-    .then((value) {
-      if (!device.isConnected) return; // connection failed
-
-      int deviceIndex = _getDeviceIndexByMac(device.remoteId.toString());
-      if (deviceIndex < 0) return; // Device not found in our list
-
-      // check comm mode of that device, since it might not have commMode = true
-      // but just wants to connect for configuration 
-      // (commMode = false and placed in dock for v2 or button long pressed for v1)
-      LPEDBluetooth.readCommMode(device).then((value) {
-        if (value ?? false) {
-          // set the accelerometer to int mode in case it was left in trigger
-          LPEDBluetooth.writeCommand(device, LPEDBluetooth.gattCommandEnableDockConn).then((value) {
-            // set cap state notification callback 
-            devices[deviceIndex].capStateNotifications = 
-              device.servicesList[LPEDBluetooth.gattCapServiceIndex]
-                    .characteristics[LPEDBluetooth.gattCapStateIndex]
-                    .onValueReceived.listen((value) {
-                      devices[deviceIndex].updateCapState(value[0]);
-                    });
-
-            // stop the notification subscription when the device disconnects 
-            device.cancelWhenDisconnected(devices[deviceIndex].capStateNotifications!);
-            
-            // subscribe to cap state notifications 
-            device.servicesList[LPEDBluetooth.gattCapServiceIndex]
-                  .characteristics[LPEDBluetooth.gattCapStateIndex]
-                  .setNotifyValue(true);
-
-            // set dice number notification callback 
-            devices[deviceIndex].diceNumberIndications = 
-              device.servicesList[LPEDBluetooth.gattDiceServiceIndex]
-                    .characteristics[LPEDBluetooth.gattDiceNumberIndex]
-                    .onValueReceived.listen((value) {
-                      switch (LPEDBluetooth.diceStatusFromIndication(value)) {
-                        case LPEDBluetooth.diceNumber: 
-                          devices[deviceIndex].updateNumber(LPEDBluetooth.diceNumberFromIndication(value));
-                          break;
-                        case LPEDBluetooth.rolling:
-                          devices[deviceIndex].updateNumber(PlayCard.rollingValue);
-                          break;
-                        case LPEDBluetooth.unknown:
-                          devices[deviceIndex].updateNumber(PlayCard.unknownValue);
-                          break;
-                      }
-                    });
-
-            // stop the notification subscription when the device disconnects 
-            device.cancelWhenDisconnected(devices[deviceIndex].diceNumberIndications!);
-
-            // subscribe to cap state notifications 
-            device.servicesList[LPEDBluetooth.gattDiceServiceIndex]
-                  .characteristics[LPEDBluetooth.gattDiceNumberIndex]
-                  .setNotifyValue(true);
-          });
-        }
-      });
-    });
+    for (BluetoothDevice bluetoothDevice in FlutterBluePlus.connectedDevices) {
+      if (bluetoothDevice.remoteId.toString() == mac) {
+        print("sending animation:");
+        print(PredefinedAnimations.identifyAnimation.toByteArray().length);
+        LPEDBluetooth.writeAnimation(bluetoothDevice, PredefinedAnimations.identifyAnimation);
+        break;
+      }
+    }
   }
+
+void _disconnectFromAllDevices() {
+  for (BluetoothDevice bluetoothDevice in FlutterBluePlus.connectedDevices) {
+    if (devices.isEmpty) return;
+
+    for (DevicePlayModel device in devices) {
+      if (device.mac == bluetoothDevice.remoteId.toString()) {
+        bluetoothDevice.disconnect();
+        break;
+      }
+    }
+  }
+}
+
+Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
+  // dont try to connect to already connected devices
+  if (device.isConnected) return;
+
+  try {
+    // Connect with a timeout
+    await device.connect(timeout: const Duration(seconds: 15));
+
+    // check the connection succeeded
+    if (!device.isConnected) {
+      return;
+    }
+
+    // find the device
+    final int deviceIndex = _getDeviceIndexByMac(device.remoteId.toString());
+    if (deviceIndex < 0) return; // device not found
+
+    // discover all services
+    final List<BluetoothService> services = await device.discoverServices();
+    if (services.length <= LPEDBluetooth.gattDiceServiceIndex) return;
+
+    // check communication mode, device might be in connection mode for 
+    // configuration only
+    final bool commMode = await LPEDBluetooth.readCommMode(device) ?? false;
+    if (!commMode) {
+      _devicesBlacklist.removeWhere((mac) => mac == device.remoteId.toString());
+      return;
+    }
+
+    // listen to connection status
+    final StreamSubscription<BluetoothConnectionState> connSub =
+        device.connectionState.listen((state) {
+      if (state == BluetoothConnectionState.disconnected) {
+        _devicesBlacklist.removeWhere(
+            (mac) => mac == device.remoteId.toString());
+        // cancel subscription when disconnected
+        devices[deviceIndex].capStateSubscription?.cancel();
+        devices[deviceIndex].diceNumberSubscription?.cancel();
+      }
+    });
+
+    // save connection state
+    devices[deviceIndex].connectionSubscription = connSub;
+
+    // Enable dock‑mode command
+    // await LPEDBluetooth.writeCommand(
+    //     device, LPEDBluetooth.gattCommandEnableDockConn);
+
+    // gatt characteristic with capacitor state
+    final BluetoothCharacteristic capState = device.servicesList[
+        LPEDBluetooth.gattCapServiceIndex].characteristics[
+        LPEDBluetooth.gattCapStateIndex];
+
+    // enable notifications for cap state
+    await capState.setNotifyValue(true);
+
+    // listen for cap state changes
+    final StreamSubscription<List<int>> capStateSubscription = capState.onValueReceived
+        .listen((value) {
+          devices[deviceIndex].updateCapState(value[0]);
+          update();
+        });
+
+    // save the capacitor state subscription
+    devices[deviceIndex].capStateSubscription = capStateSubscription;
+
+    // dice status characteristic
+    final BluetoothCharacteristic diceNumber = device.servicesList[
+        LPEDBluetooth.gattDiceServiceIndex].characteristics[
+        LPEDBluetooth.gattDiceNumberIndex];
+
+    // subscribe to dice number changes
+    await diceNumber.setNotifyValue(true);
+
+    // listen for and parse dice number/status changes
+    final StreamSubscription<List<int>> diceNumberSubscription = diceNumber.onValueReceived
+        .listen((value) {
+      switch (LPEDBluetooth.diceStatusFromNotification(value)) {
+        case LPEDBluetooth.diceNumber:
+          devices[deviceIndex]
+              .updateNumber(LPEDBluetooth.diceNumberFromNotification(value));
+          break;
+        case LPEDBluetooth.rolling:
+          devices[deviceIndex].updateNumber(PlayCard.rollingValue);
+          break;
+        case LPEDBluetooth.unknown:
+          devices[deviceIndex].updateNumber(PlayCard.unknownValue);
+          break;
+      }
+      update();
+    });
+
+    devices[deviceIndex].diceNumberSubscription = diceNumberSubscription;
+  } catch (e) {
+    // TODO: add error popup
+    // remove device so that it can be connected in the future
+    _devicesBlacklist.removeWhere((mac) => mac == device.remoteId.toString());
+  }
+}
 
   /// Start scanning for the non-connectable advertisement from all devices where we saved the MAC address
   void _startScan() {
@@ -180,9 +244,12 @@ class _PlayPageState extends State<PlayPage>{
       int deviceIndex;
 
       for (ScanResult result in results) {
+        if (_devicesBlacklist.contains(result.device.remoteId.toString())) continue;
+
         // check if device is connectable (indicating connection base comunication mode)
         if (result.advertisementData.connectable) {
           _connectDeviceAndSubscribe(result.device);
+          _devicesBlacklist.add(result.device.remoteId.toString());
 
           // skip the rest of the steps that are for non-connectable dice
           continue;
@@ -238,6 +305,7 @@ class _PlayPageState extends State<PlayPage>{
   @override
   void dispose() {
     _stopScan();
+    _disconnectFromAllDevices();
     adapterStateSubscription.cancel();
     super.dispose();
   }
@@ -263,6 +331,7 @@ class _PlayPageState extends State<PlayPage>{
                           changeVisibilityCallback: changeVisibilityOfDevice,
                           changeInclusionCallback: changeInclusionOfDevice,
                           clearHistoryCallback: () => clearHistoryOfDevice(device.mac),
+                          identifyCallback: identifyDevice,
                         )
                   ],
                 )

@@ -27,6 +27,7 @@ class PlayCard extends StatefulWidget {
   final Function(String, bool) changeVisibilityCallback;
   final Function(String, bool) changeInclusionCallback;
   final Function() clearHistoryCallback;
+  final Function(String) identifyCallback;
 
   const PlayCard({
     super.key, 
@@ -40,6 +41,7 @@ class PlayCard extends StatefulWidget {
     required this.changeInclusionCallback,
     required this.history,
     required this.clearHistoryCallback,
+    required this.identifyCallback
   });
   PlayCard.fromDevicePlayModel({
     super.key, 
@@ -47,6 +49,7 @@ class PlayCard extends StatefulWidget {
     required this.changeVisibilityCallback, 
     required this.changeInclusionCallback,
     required this.clearHistoryCallback,
+    required this.identifyCallback
   }) : 
     mac = model.mac, 
     name = model.name,
@@ -73,7 +76,8 @@ class _PlayCardState extends State<PlayCard>{
       widget.changeVisibilityCallback, 
       widget.changeInclusionCallback,
       widget.history,
-      widget.clearHistoryCallback
+      widget.clearHistoryCallback,
+      widget.identifyCallback
     );
   }
 

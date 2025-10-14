@@ -2,14 +2,16 @@ import 'dart:async';
 
 import 'package:app/models/device/device_list.dart';
 import 'package:app/services/storage.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class DevicePlayModel extends DeviceListModel {
   int number = 0;
   bool visible = true;
   bool included = true;
   int id = 0;
-  StreamSubscription<List<int>>? capStateNotifications;
-  StreamSubscription<List<int>>? diceNumberIndications;
+  StreamSubscription<List<int>>? capStateSubscription;
+  StreamSubscription<List<int>>? diceNumberSubscription;
+  StreamSubscription<BluetoothConnectionState>? connectionSubscription;
 
   DevicePlayModel.fromJSON(super.json) : super.fromJSON();
 
