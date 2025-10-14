@@ -5,6 +5,7 @@
 // 	 Description: 	  This file contains functions and predefined values
 //                    for communication with dice
 //
+import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_list.dart';
 import 'package:app/models/led_mode/led_mode_base.dart';
@@ -64,9 +65,14 @@ abstract class LPEDBluetooth {
   /// Index of current state of charge of the capacitor in the die
   static const int gattCommModeIndex = 8;
 
+  /// Index of the dice number/status updates
   static const int gattDiceNumberIndex = 9;
 
+  /// Index of the selected side definition for selecting and reading
   static const int gattSelectedSideDefinitionIndex = 10;
+
+  /// Index of manual animation command
+  static const int gattAnimationIndex = 11;
 
   /// GATT command that restart dice
   static const int gattCommandRestart = 0;
@@ -146,11 +152,11 @@ abstract class LPEDBluetooth {
     return outputAccValues;
   }
 
-  static int diceStatusFromIndication(List<int> byteArray) {
+  static int diceStatusFromNotification(List<int> byteArray) {
     return byteArray[0];
   }
 
-  static int diceNumberFromIndication(List<int> byteArray) {
+  static int diceNumberFromNotification(List<int> byteArray) {
     return byteArray[1];
   }
 
@@ -253,9 +259,6 @@ abstract class LPEDBluetooth {
 
       readResult = await LPEDBluetooth.readGATTCharacteristic(device, gattDiceServiceIndex, gattSelectedSideDefinitionIndex);
       if (!readResult.successful) return null;
-
-      print("SIDE_DEF:");
-      print(readResult.data);
 
       currentDiceProfile.sides.add(SideDefinitionListModel.fromIntList(readResult.data));
     }
@@ -441,6 +444,11 @@ abstract class LPEDBluetooth {
     }
 
     GattResultWrite result = await writeGATTCharacteristic(device, gattDiceServiceIndex, gattCommandIndex, [command]);
+    return result.successful;
+  }
+
+  static Future<bool> writeAnimation(BluetoothDevice device, AnimationDetailModel animation) async {
+    GattResultWrite result = await LPEDBluetooth.writeGATTCharacteristic(device, gattDiceServiceIndex, gattAnimationIndex, animation.toByteArray());
     return result.successful;
   }
 }

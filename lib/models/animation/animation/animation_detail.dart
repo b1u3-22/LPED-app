@@ -6,7 +6,7 @@ import 'package:app/models/animation/animation_step/animation_step_detail.dart';
 class AnimationDetailModel extends AnimationListModel {
   late List<AnimationStepDetailModel> steps;
 
-  AnimationDetailModel(super.newFadeType, super.newNumberOfSteps, this.steps);
+  AnimationDetailModel(int fadeType, this.steps) : super(fadeType, steps.length);
 
   AnimationDetailModel.fromIntList(List<int> byteArray) : super.fromIntList(byteArray) {
     List<int> stepsByteArray = byteArray.sublist(AnimationListModel.sizeInBytes);
@@ -33,7 +33,7 @@ class AnimationDetailModel extends AnimationListModel {
     }
 
     // pad remaining steps
-    for (int emptyStep = numberOfSteps; emptyStep < AnimationBaseModel.numberOfStepsMaxValue + 1; emptyStep++) {
+    for (int emptyStep = numberOfSteps; emptyStep < AnimationBaseModel.numberOfStepsMaxValue; emptyStep++) {
       for (int stepByte = 0; stepByte < AnimationStepBaseModel.sizeInBytes; stepByte++) {
         output.add(0);
       }
