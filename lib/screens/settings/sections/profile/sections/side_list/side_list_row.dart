@@ -29,52 +29,61 @@ class SideListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Card(
+      child: Padding(
+        padding: EdgeInsetsGeometry.all(12),
+        child: Column(
           children: [
-            SizedBox(
-              width: 20,
-              child: SettingsField(
-                prefilled: model.number.toString(),
-                style: labelStyle,
-                align: TextAlign.center,
-                keyboardType: TextInputType.number,
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("X: ${(model.vector[0] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
-                Text("Y: ${(model.vector[1] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
-                Text("Z: ${(model.vector[2] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
-              ],
-            ),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                IconButton(
-                  onPressed: onVectorChange, 
-                  icon: Icon(Icons.my_location),
-                  color: Theme.of(context).colorScheme.tertiary,
+                SizedBox(
+                  width: 20,
+                  child: SettingsField(
+                    prefilled: model.number.toString(),
+                    style: labelStyle,
+                    align: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                  ),
                 ),
-                IconButton(
-                  onPressed: onAnimationChange, 
-                  icon: Icon(Icons.animation),
-                  color: Theme.of(context).colorScheme.secondary,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("X: ${(model.vector[0] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
+                    Text("Y: ${(model.vector[1] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
+                    Text("Z: ${(model.vector[2] / LPEDBluetooth.accelerometerDivisor).toStringAsFixed(2)}g", style: badgeStyle,),
+                  ],
                 ),
-                IconButton(
-                  onPressed: onDelete, 
-                  icon: Icon(Icons.delete)
-                ),
-                
+                Row(
+                  children: [
+                    IconButton(
+                      iconSize: textStyle.fontSize! * 1.8,
+                      padding: EdgeInsetsGeometry.all(0),
+                      onPressed: onVectorChange, 
+                      icon: Icon(Icons.my_location),
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    IconButton(
+                      iconSize: textStyle.fontSize! * 1.8,
+                      padding: EdgeInsetsGeometry.all(0),
+                      onPressed: onAnimationChange, 
+                      icon: Icon(Icons.animation),
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    IconButton(
+                      iconSize: textStyle.fontSize! * 1.8,
+                      padding: EdgeInsetsGeometry.all(0),
+                      onPressed: onDelete, 
+                      icon: Icon(Icons.delete)
+                    ),
+                  ],
+                )
               ],
             )
           ],
         ),
-        Divider()
-      ],
+      )
     );
   }
 }

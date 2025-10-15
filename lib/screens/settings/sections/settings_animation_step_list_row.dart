@@ -6,13 +6,15 @@ import 'package:flutter/material.dart';
 class SettingsAnimationStepListRow extends StatefulWidget {
   final AnimationStepDetailModel model;
   final Function() onDelete;
+  final Function() onCopy;
   final Function(int newColorIndex, int newDuration) onChange;
 
   const SettingsAnimationStepListRow({
     super.key,
     required this.model,
     required this.onDelete,
-    required this.onChange
+    required this.onChange,
+    required this.onCopy
   });
 
   @override
@@ -26,46 +28,58 @@ class SettingsAnimationStepListRowState extends State<SettingsAnimationStepListR
   @override
   void initState() {
     super.initState();
-    _model = AnimationStepDetailModel(widget.model.colorIndex, widget.model.duration);
   }
 
   @override
   Widget build(BuildContext context) {
+    _model = AnimationStepDetailModel(widget.model.colorIndex, widget.model.duration);
+
     return Column(
       children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SettingsPalleteDropDown(
-              currentSelectedColor: _model.colorIndex, 
-              newColorSelected: (newColorIndex) {
-                setState(() {
-                  _model.colorIndex = newColorIndex;
-                });
-                widget.onChange(newColorIndex, _model.duration);
-              }
+        FittedBox(
+          child: Card(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SettingsPalleteDropDown(
+                  currentSelectedColor: _model.colorIndex, 
+                  newColorSelected: (newColorIndex) {
+                    setState(() {
+                      _model.colorIndex = newColorIndex;
+                    });
+                    widget.onChange(newColorIndex, _model.duration);
+                  }
+                ),
+                Slider(
+                  min: 0,
+                  max: AnimationStepBaseModel.durationMaxValue.toDouble(),
+                  label: "${((_model.duration + 1) * 100) / 1000}s",
+                  value: _model.duration.toDouble(), 
+                  divisions:  AnimationStepBaseModel.durationMaxValue + 1,
+                  onChanged: (newDuration) {
+                    setState(() {
+                      _model.duration = newDuration.toInt();
+                    });
+                    widget.onChange(_model.colorIndex, newDuration.toInt());
+                  }
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: widget.onDelete, 
+                      icon: Icon(Icons.delete)
+                    ),
+                    IconButton(
+                      onPressed: widget.onCopy, 
+                      icon: Icon(Icons.copy)
+                    ),
+                  ],
+                )
+              ],
             ),
-            Slider(
-              min: 0,
-              max: AnimationStepBaseModel.durationMaxValue.toDouble(),
-              label: "${((_model.duration + 1) * 100) / 1000}s",
-              value: _model.duration.toDouble(), 
-              divisions:  AnimationStepBaseModel.durationMaxValue + 1,
-              onChanged: (newDuration) {
-                setState(() {
-                  _model.duration = newDuration.toInt();
-                });
-                widget.onChange(_model.colorIndex, newDuration.toInt());
-              }
-            ),
-            IconButton(
-              onPressed: widget.onDelete, 
-              icon: Icon(Icons.delete)
-            )
-          ],
-        ),
-        Divider()
+          ),
+        )
       ],
     );
   }

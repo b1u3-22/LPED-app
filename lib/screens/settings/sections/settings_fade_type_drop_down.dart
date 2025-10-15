@@ -1,6 +1,4 @@
 import 'package:app/models/animation/fade_type/fade_type_list.dart';
-import 'package:app/models/led_mode/led_mode_list.dart';
-import 'package:app/screens/settings/sections/profile/sections/led_mode_drop_down/led_mode_drop_down_row.dart';
 import 'package:app/screens/settings/sections/settings_fade_type_drop_down_row.dart';
 import 'package:app/services/bluetooth/bluetooth.dart';
 import 'package:flutter/material.dart';

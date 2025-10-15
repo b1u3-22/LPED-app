@@ -38,7 +38,7 @@ class _UpdateSideDefinitionAnimationDialogState extends State<UpdateSideDefiniti
   }
 
   void _updateSide(AnimationDetailModel newAnimation) {
-    _side.animation = newAnimation;
+    setState(() => _side.animation = newAnimation);
   }
 
   @override

@@ -22,7 +22,7 @@ import 'package:app/screens/settings/flows/command_restart/command_restart_flow.
 import 'package:app/screens/settings/flows/data_loading_failed/data_loading_failed_flow.dart';
 import 'package:app/screens/settings/flows/delete_dice_definition/delete_dice_definition_flow.dart';
 import 'package:app/screens/settings/flows/delete_side_definition/delete_side_definition_flow.dart';
-import 'package:app/screens/settings/flows/update_side_definition_animation/update_side_definition_vector_flow.dart';
+import 'package:app/screens/settings/flows/update_side_definition_animation/update_side_definition_animation_flow.dart';
 import 'package:app/screens/settings/flows/update_side_definition_vector/update_side_definition_vector_flow.dart';
 import 'package:app/screens/settings/sections/general/general_section.dart';
 import 'package:app/screens/settings/sections/loading_section.dart';

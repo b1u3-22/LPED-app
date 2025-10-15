@@ -3,6 +3,7 @@ import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/animation/animation_step/animation_step_base.dart';
 import 'package:app/models/animation/animation_step/animation_step_detail.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
+import 'package:app/screens/settings/sections/settings_action_button.dart';
 import 'package:app/screens/settings/sections/settings_animation_step_list.dart';
 import 'package:app/screens/settings/sections/settings_fade_type_drop_down.dart';
 import 'package:app/screens/settings/sections/settings_label.dart';
@@ -30,63 +31,75 @@ class _SettingsSideAnimationEditState extends State<SettingsSideAnimationEdit>{
   @override
   void initState() {
     super.initState();
-    _side = SideDefinitionListModel.withAnimation(number: widget.side.number, vector: widget.side.vector, animation: widget.side.animation);
   }
 
   void _generateBlinkingPattern() {
+    AnimationDetailModel temp = AnimationDetailModel.generateBlink(_side.number);
+    _deleteAllAnimationSteps();
     setState(() {
-      AnimationDetailModel temp = AnimationDetailModel.generateBlink(_side.number);
       _side.animation = temp;
       _side.animation.numberOfSteps = temp.steps.length;
-      widget.onChange(_side.animation);
     });
+    widget.onChange(_side.animation);
   }
 
   void _addAnimationStep() {
+    List<AnimationStepDetailModel> temp = List.from(_side.animation.steps);
+    temp.add(AnimationStepDetailModel(0, (AnimationStepBaseModel.durationMaxValue / 2).floor()));
     setState(() {
-      List<AnimationStepDetailModel> temp = _side.animation.steps;
-      temp.add(AnimationStepDetailModel(0, (AnimationStepBaseModel.durationMaxValue / 2).floor()));
       _side.animation.steps = temp;
       _side.animation.numberOfSteps = temp.length;
-      widget.onChange(_side.animation);
     });
+    widget.onChange(_side.animation);
   }
 
   void _deleteAnimationStep(int stepIndex) {
+    List<AnimationStepDetailModel> temp = List.from(_side.animation.steps);
+    temp.removeAt(stepIndex);
     setState(() {
-      List<AnimationStepDetailModel> temp = _side.animation.steps;
-      temp.removeAt(stepIndex);
       _side.animation.steps = temp;
       _side.animation.numberOfSteps = temp.length;
-      widget.onChange(_side.animation);
     });
+    widget.onChange(_side.animation);
   }
 
   void _deleteAllAnimationSteps() {
     setState(() {
       _side.animation.steps = [];
       _side.animation.numberOfSteps = 0;
-      widget.onChange(_side.animation);
     });
+    widget.onChange(_side.animation);
   }
 
   void _changeAnimationStep(int stepIndex, int colorIndex, int duration) {
     setState(() {
       _side.animation.steps[stepIndex].colorIndex = colorIndex;
       _side.animation.steps[stepIndex].duration = duration;
-      widget.onChange(_side.animation);
     });
+    widget.onChange(_side.animation);
   }
 
   void _changeAnimationFadeType(int newFadeType) {
+    setState(() =>  _side.animation.fadeType = newFadeType);
+    widget.onChange(_side.animation);
+  }
+
+  void _copyAnimationstep(int stepIndex) {
+    List<AnimationStepDetailModel> temp = List.from(_side.animation.steps);
+    temp.insert(stepIndex + 1, AnimationStepDetailModel(temp[stepIndex].colorIndex, temp[stepIndex].duration));
+
     setState(() {
-      _side.animation.fadeType = newFadeType;
-      widget.onChange(_side.animation);
+      _side.animation.steps = temp;
+      _side.animation.numberOfSteps = temp.length;
     });
+
+    widget.onChange(_side.animation);
   }
 
   @override
   Widget build(BuildContext context) {
+    _side = SideDefinitionListModel.withAnimation(number: widget.side.number, vector: widget.side.vector, animation: widget.side.animation);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -113,17 +126,20 @@ class _SettingsSideAnimationEditState extends State<SettingsSideAnimationEdit>{
             newTypeSelected: (newFadeType) => _changeAnimationFadeType(newFadeType)
           ),
         ),
+        Divider(),
         SettingsAnimationStepList(
           steps: _side.animation.steps, 
           onDelete: (int stepIndex) => _deleteAnimationStep(stepIndex), 
-          onChange: (int stepIndex, int colorIndex, int duration) => _changeAnimationStep(stepIndex, colorIndex, duration)
+          onChange: (int stepIndex, int colorIndex, int duration) => _changeAnimationStep(stepIndex, colorIndex, duration),
+          onCopy: (int stepIndex) => _copyAnimationstep(stepIndex),
         ),
         Column(
           children: [
-            ElevatedButton(
-              onPressed: _addAnimationStep, 
-              child: SettingsLabel(text: "Add step")
-            ),
+            SettingsActionButton(
+              text: "Add step",
+              subText: "${_side.animation.numberOfSteps}/${AnimationBaseModel.numberOfStepsMaxValue}",
+              action: _addAnimationStep,
+            )
           ],
         )
       ],

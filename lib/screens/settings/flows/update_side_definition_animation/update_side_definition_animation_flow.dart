@@ -6,7 +6,7 @@
 //
 
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/settings/flows/update_side_definition_animation/update_side_definition_vector_dialog.dart';
+import 'package:app/screens/settings/flows/update_side_definition_animation/update_side_definition_animation_dialog.dart';
 import 'package:flutter/material.dart';
 
 Future<void> showUpdateSideDefinitionAnimationDialog(BuildContext context, SideDefinitionListModel side, Function(SideDefinitionListModel updatedSide) onConfirm, Function() onCancel) async {
