@@ -1,7 +1,7 @@
 import 'package:app/models/updatable.dart';
 
 abstract class DiceDefinitionBaseModel extends Updatable {
-  static const int sidesMaxLen = 60;
+  static const int sidesMaxLen = 20;
   static const int namePosition = 0;
   static const int nameMaxLen = 21;
   static const int idPosition = 21;

@@ -28,6 +28,7 @@ class PlayCard extends StatefulWidget {
   final Function(String, bool) changeInclusionCallback;
   final Function() clearHistoryCallback;
   final Function(String) identifyCallback;
+  final bool connected;
 
   const PlayCard({
     super.key, 
@@ -41,7 +42,8 @@ class PlayCard extends StatefulWidget {
     required this.changeInclusionCallback,
     required this.history,
     required this.clearHistoryCallback,
-    required this.identifyCallback
+    required this.identifyCallback,
+    required this.connected
   });
   PlayCard.fromDevicePlayModel({
     super.key, 
@@ -57,7 +59,8 @@ class PlayCard extends StatefulWidget {
     capState = model.capState,
     visible = model.visible,
     included = model.included,
-    history = model.history;
+    history = model.history,
+    connected = model.connectionSubscription != null;
 
   @override
   State<PlayCard> createState() => _PlayCardState();
@@ -77,7 +80,8 @@ class _PlayCardState extends State<PlayCard>{
       widget.changeInclusionCallback,
       widget.history,
       widget.clearHistoryCallback,
-      widget.identifyCallback
+      widget.identifyCallback,
+      widget.connected
     );
   }
 

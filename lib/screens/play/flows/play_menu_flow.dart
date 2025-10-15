@@ -21,7 +21,8 @@ List<PopupMenuItem> _menuContent(
     Function(String mac, bool newInclusion) inclusionCallback,
     Map<String, int> history,
     Function() clearHistoryCallback,
-    Function(String mac) identifyCallback
+    Function(String mac) identifyCallback,
+    bool deviceConnected
   ) {
   return [
     PopupMenuItem(
@@ -131,6 +132,7 @@ List<PopupMenuItem> _menuContent(
           )
         )
       ),
+      if (deviceConnected) 
       PopupMenuItem(
         child: TextButton(
           onPressed: () {
@@ -162,7 +164,8 @@ Future<void> showPlayMenu(
     Function(String mac, bool newInclusion) inclusionCallback,
     Map<String, int> history,
     Function() clearHistoryCallback,
-    Function(String mac) identifyCallback
+    Function(String mac) identifyCallback,
+    bool deviceConnected
   ) { 
 
   return showMenu(
@@ -184,7 +187,8 @@ Future<void> showPlayMenu(
       inclusionCallback,
       history,
       clearHistoryCallback,
-      identifyCallback
+      identifyCallback,
+      deviceConnected
     )
   );
 }

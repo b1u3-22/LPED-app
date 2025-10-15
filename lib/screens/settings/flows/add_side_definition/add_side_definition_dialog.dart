@@ -8,6 +8,7 @@
 //
 
 import 'package:app/global/stepped_dialog/stepped_dialog_base.dart';
+import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
 import 'package:app/screens/settings/flows/add_side_definition/sections/animation_step.dart';
@@ -36,9 +37,10 @@ class _AddSideDefinitionDialogState extends State<AddSideDefinitionDialog>{
 
   @override
   void initState() {
-    newSide = SideDefinitionListModel(
+    newSide = SideDefinitionListModel.withAnimation(
       number: widget.diceProfile.numberOfSides + 1, 
-      vector: [0, 0, 0]
+      vector: [0, 0, 0],
+      animation: AnimationDetailModel.empty()
     );
 
     super.initState();

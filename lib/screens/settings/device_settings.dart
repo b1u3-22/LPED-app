@@ -13,7 +13,6 @@ import 'package:app/models/dice_definition/dice_definition_base.dart';
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_list.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/devices/devices.dart';
 import 'package:app/screens/settings/flows/add_dice_definition/add_dice_definition_flow.dart';
 import 'package:app/screens/settings/flows/add_side_definition/add_side_definition_flow.dart';
 import 'package:app/global/history_dialog/clear_history_confirmation/clear_history_confirmation_flow.dart';
@@ -489,6 +488,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     if (result == null) {
       return true;
     }
+
     setState(() => _supportedDiceProfiles = result);
     return false;
   }
@@ -558,9 +558,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
   void _exitWithError(String errorMessage) {
     if (!mounted) return;
     Fluttertoast.showToast(msg: errorMessage);
-    Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => DevicesPage()),
-    );
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   /// Start searching for dice with the required MAC address
@@ -615,14 +613,22 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
                 }
                 else {
                   // Load all data
-                   _loadData().then((_) => setState(() => _connecting = false));
+                  _loadData().then((_) => setState(() => _connecting = false));
+                  _scan!.cancel();
                   } 
+              })
+              .catchError((error) {
+                _exitWithError("Connection to ${widget.device.name} failed!");
               });
             }
             else {
               _exitWithError("Connection to ${widget.device.name} failed!");
             }
+          })
+          .catchError((error) {
+            _exitWithError("Connection to ${widget.device.name} failed!");
           });
+        
           break;
         }
       }

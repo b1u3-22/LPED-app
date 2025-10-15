@@ -94,8 +94,6 @@ class _PlayPageState extends State<PlayPage>{
 
     for (BluetoothDevice bluetoothDevice in FlutterBluePlus.connectedDevices) {
       if (bluetoothDevice.remoteId.toString() == mac) {
-        print("sending animation:");
-        print(PredefinedAnimations.identifyAnimation.toByteArray().length);
         LPEDBluetooth.writeAnimation(bluetoothDevice, PredefinedAnimations.identifyAnimation);
         break;
       }

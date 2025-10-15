@@ -1,4 +1,3 @@
-import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/animation/animation_step/animation_step_detail.dart';
 import 'package:app/screens/settings/sections/settings_animation_step_list_row.dart';
 import 'package:app/screens/settings/sections/settings_list.dart';
