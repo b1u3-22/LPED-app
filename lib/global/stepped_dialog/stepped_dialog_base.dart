@@ -8,6 +8,7 @@ class SteppedDialogBase extends StatefulWidget {
   final List<SteppedDialogStepBase> steps;
   final Function() onFinish;
   final Function()? onCancel;
+  final String finishButtonText;
 
 
   const SteppedDialogBase({
@@ -15,7 +16,8 @@ class SteppedDialogBase extends StatefulWidget {
     required this.title,
     required this.steps,
     required this.onFinish,
-    this.onCancel
+    this.onCancel,
+    this.finishButtonText = "Finish"
   });
 
   bool _nextStep(int currentStep) {
@@ -67,7 +69,7 @@ class _SteppedDialogBaseState extends State<SteppedDialogBase>{
             callback: _decrementStep,
           ),
         DialogActionBase(
-          label: _currentStep == widget.steps.length - 1 ? "Finish" : "Next",
+          label: _currentStep == widget.steps.length - 1 ? widget.finishButtonText : "Next",
           callback: () {
             _currentStep == widget.steps.length - 1 ? widget.onFinish() : _incrementStep();
           },

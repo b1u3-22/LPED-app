@@ -42,6 +42,11 @@ class AnimationDetailModel extends AnimationListModel {
     steps = [];
   }
 
+  AnimationDetailModel.fromColor(int colorIndex) : super(FadeTypeBaseModel.fadeTypeSlowValue, 1) {
+    steps = [AnimationStepDetailModel(colorIndex, AnimationStepBaseModel.durationMaxValue)];
+    numberOfSteps = steps.length;
+  }
+
   @override
   List<int> toByteArray() {
     // add fade and number of steps
