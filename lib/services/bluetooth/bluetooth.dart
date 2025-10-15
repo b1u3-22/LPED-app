@@ -6,6 +6,8 @@
 //                    for communication with dice
 //
 import 'package:app/models/animation/animation/animation_detail.dart';
+import 'package:app/models/animation/fade_type/fade_type_base.dart';
+import 'package:app/models/animation/fade_type/fade_type_list.dart';
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_list.dart';
 import 'package:app/models/led_mode/led_mode_base.dart';
@@ -102,6 +104,13 @@ abstract class LPEDBluetooth {
     SensitivityListModel(name: "Low", value: SensitivityBaseModel.sensitivityLowValue),
     SensitivityListModel(name: "Medium", value: SensitivityBaseModel.sensitivityMediumValue),
     SensitivityListModel(name: "High", value: SensitivityBaseModel.sensitivityHighValue),
+  ];
+
+  static List<FadeTypeListModel> fadeTypes = [
+    FadeTypeListModel(name: "None", value: FadeTypeBaseModel.fadeTypeNoneValue),
+    FadeTypeListModel(name: "Fast", value: FadeTypeBaseModel.fadeTypeFastValue),
+    FadeTypeListModel(name: "Slow", value: FadeTypeBaseModel.fadeTypeSlowValue),
+    FadeTypeListModel(name: "Gradual", value: FadeTypeBaseModel.fadeTypeGradValue)
   ];
 
   /// ID of advertisement message from its manufacturer data
@@ -246,6 +255,7 @@ abstract class LPEDBluetooth {
 
     DiceDefinitionListModel currentDiceProfileHeader = DiceDefinitionListModel.fromIntList(readResult.data); 
     DiceDefinitionDetailModel currentDiceProfile = DiceDefinitionDetailModel(
+      id: currentDiceProfileHeader.id,
       name: currentDiceProfileHeader.name, 
       numberOfSides: currentDiceProfileHeader.numberOfSides, 
       range: currentDiceProfileHeader.range

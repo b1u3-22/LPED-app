@@ -22,7 +22,8 @@ import 'package:app/screens/settings/flows/command_restart/command_restart_flow.
 import 'package:app/screens/settings/flows/data_loading_failed/data_loading_failed_flow.dart';
 import 'package:app/screens/settings/flows/delete_dice_definition/delete_dice_definition_flow.dart';
 import 'package:app/screens/settings/flows/delete_side_definition/delete_side_definition_flow.dart';
-import 'package:app/screens/settings/flows/update_side_definition/update_side_definition_flow.dart';
+import 'package:app/screens/settings/flows/update_side_definition_animation/update_side_definition_vector_flow.dart';
+import 'package:app/screens/settings/flows/update_side_definition_vector/update_side_definition_vector_flow.dart';
 import 'package:app/screens/settings/sections/general/general_section.dart';
 import 'package:app/screens/settings/sections/loading_section.dart';
 import 'package:app/screens/settings/sections/profile/profile_section.dart';
@@ -372,12 +373,12 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
 
   /// Display the edit vector flow for side at [sideIndex] inside [profile]
   void _startChangingSideVector(DiceDefinitionDetailModel profile, int sideIndex) {
-    showUpdateSideDefinitionDialog(
+    showUpdateSideDefinitionVectorDialog(
       context, 
       profile.sides[sideIndex], 
       _getVector, 
       (newSide) {
-        _changeSideVector(profile, newSide, sideIndex);
+        _changeSideDefinition(profile, newSide, sideIndex);
         Navigator.of(context).pop();
       },
       () {
@@ -388,12 +389,12 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
   }
 
   /// Update [newSide] at [sideIndex] inside [profile] and refresh the selected profile and supported profiles
-  void _changeSideVector(DiceDefinitionDetailModel profile, SideDefinitionListModel newSide, int sideIndex) async {
+  void _changeSideDefinition(DiceDefinitionDetailModel profile, SideDefinitionListModel newSide, int sideIndex) async {
     setState(() => profile.sides[sideIndex] = newSide);
 
-    var result = await LPEDBluetooth.writeUpdateSideDefinition(_bluetoothDevice, profile.id, sideIndex, profile.sides[sideIndex]);
+    var result = await LPEDBluetooth.writeUpdateSideDefinition(_bluetoothDevice, profile.id, sideIndex, newSide);
     if (!result) {
-      Fluttertoast.showToast(msg: "Failed to change vector");
+      Fluttertoast.showToast(msg: "Failed to save side changes");
       return;
     }
 
@@ -401,20 +402,45 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     if (profile.id == _currentProfileID) await _getCurrentProfile();
   }
 
+  /// Display the edit vector flow for side at [sideIndex] inside [profile]
+  void _startChangingSideAnimation(DiceDefinitionDetailModel profile, int sideIndex) {
+    showUpdateSideDefinitionAnimationDialog(
+      context, 
+      profile.sides[sideIndex], 
+      (newSide) {
+        _changeSideDefinition(profile, newSide, sideIndex);
+        Navigator.of(context).pop();
+      },
+      () {
+        _getCurrentProfile();
+        Navigator.of(context).pop();
+      }
+    );
+  }
+
   /// Display the data loading failed flow, which will ask user for factory reset
-  Future<void> _dataLoadingFailed() async {
-    await showDataLoadingFailedDialog(
+  Future<bool> _dataLoadingFailed() async {
+    bool userCanceled = false;
+
+     await showDataLoadingFailedDialog(
       context, 
       widget.device, 
       () async {
         var result = await LPEDBluetooth.writeCommand(_bluetoothDevice, LPEDBluetooth.gattCommandClearMemory);
         if (!result) {
           _exitWithError("Failed to factory reset ${widget.device.name}");
-          return;
+          userCanceled = true;
         }
+
+        userCanceled = false;
       },
-      () => _exitWithError("${widget.device.name} disconnected")
+      () {
+         _exitWithError("${widget.device.name} disconnected");
+         userCanceled = true;
+      }
     );
+
+    return userCanceled;
   }
 
   /// Get side blink from device and update the value
@@ -487,6 +513,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
     setState(() => _statusMessage = "Loading data from ${widget.device.name}");
 
     var result = false;
+    var cancelled = false;
 
     do {
       result = await _getSideBlink();
@@ -498,7 +525,8 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
       result |= !(await LPEDBluetooth.writeCommand(_bluetoothDevice, LPEDBluetooth.gattCommandDisableDockConn));
 
       if (result) {
-        await _dataLoadingFailed();
+        cancelled = await _dataLoadingFailed();
+        if (cancelled) dispose();
       }
 
       // Start periodic function for capacitor state 
@@ -523,7 +551,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
         }
       });
 
-    } while (result);
+    } while (result && !cancelled);
   }
 
   /// Exit the settings and show message to user
@@ -623,6 +651,7 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
   void dispose() {
     _stopScan();
     widget.closedCallback();
+    if (_capStateTimer != null) _capStateTimer!.cancel();
     super.dispose();
   }
 
@@ -676,7 +705,8 @@ class _DeviceSettingsPageState extends State<DeviceSettingsPage>{
             addSide: _startAddingSideToProfile, 
             deleteSide: _startDeletingSideFromProfile,
             changeSideNumber: _setSideNumber, 
-            changeSideVector: _startChangingSideVector
+            changeSideVector: _startChangingSideVector,
+            changeAnimation: _startChangingSideAnimation,
           )
         ]
       );

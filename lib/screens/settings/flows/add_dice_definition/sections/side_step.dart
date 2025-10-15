@@ -6,7 +6,9 @@
 //
 
 import 'package:app/global/stepped_dialog/stepped_dialog_step_base.dart';
+import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
+import 'package:app/screens/settings/sections/settings_side_animation_edit.dart';
 import 'package:app/screens/settings/sections/settings_side_vector_edit.dart';
 import 'package:app/typography.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,7 @@ class SideStep extends SteppedDialogStepBase {
 
   final Function(List<int> newVector) changeVector;
   final Function() captureVector;
+  final Function(AnimationDetailModel newAnimation) changeAnimation;
 
   const SideStep({
     super.key,
@@ -25,7 +28,8 @@ class SideStep extends SteppedDialogStepBase {
     required this.maxSides,
     required this.side,
     required this.changeVector,
-    required this.captureVector
+    required this.captureVector,
+    required this.changeAnimation
   });
 
   @override
@@ -49,6 +53,10 @@ class SideStep extends SteppedDialogStepBase {
           side: side,
           changeVector: changeVector, 
           captureVector: captureVector
+        ),
+        SettingsSideAnimationEdit(
+          side: side, 
+          onChange: changeAnimation
         )
       ],
     );

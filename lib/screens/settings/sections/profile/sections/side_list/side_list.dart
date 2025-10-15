@@ -6,7 +6,7 @@
 //
 
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/settings/sections/profile/side_list/side_list_row.dart';
+import 'package:app/screens/settings/sections/profile/sections/side_list/side_list_row.dart';
 import 'package:app/screens/settings/sections/settings_list.dart';
 import 'package:flutter/material.dart';
 
@@ -15,13 +15,15 @@ class SideList extends StatelessWidget {
   final Function(int sideIndex) deleteSide;
   final Function(int sideIndex, int newSideNumber) changeSideNumber;
   final Function(int sideIndex) changeSideVector;
+  final Function(int sideIndex) changeAnimation;
 
   const SideList({
     super.key,
     required this.sides,
     required this.deleteSide,
     required this.changeSideNumber,
-    required this.changeSideVector
+    required this.changeSideVector,
+    required this.changeAnimation
   });
 
   @override
@@ -33,7 +35,8 @@ class SideList extends StatelessWidget {
             model: sides[sideIndex], 
             onNumberChange: (newNumber) => changeSideNumber(sideIndex, int.tryParse(newNumber) ?? 0), 
             onDelete: () => deleteSide(sideIndex), 
-            onVectorChange: () => changeSideVector(sideIndex)
+            onVectorChange: () => changeSideVector(sideIndex),
+            onAnimationChange: () => changeAnimation(sideIndex),
           )
       ]
     );

@@ -29,6 +29,8 @@ class SideDefinitionListModel extends SideDefinitionBaseModel {
   }
 
   SideDefinitionListModel({required this.number, required this.vector});
+
+  SideDefinitionListModel.withAnimation({required this.number, required this.vector, required this.animation});
   
   SideDefinitionListModel.from(SideDefinitionListModel original) : 
     number = original.number,

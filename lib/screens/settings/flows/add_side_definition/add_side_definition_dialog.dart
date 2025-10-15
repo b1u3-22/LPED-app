@@ -10,6 +10,7 @@
 import 'package:app/global/stepped_dialog/stepped_dialog_base.dart';
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
+import 'package:app/screens/settings/flows/add_side_definition/sections/animation_step.dart';
 import 'package:app/screens/settings/flows/add_side_definition/sections/selection_step.dart';
 import 'package:app/screens/settings/flows/add_side_definition/sections/vector_step.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,10 @@ class _AddSideDefinitionDialogState extends State<AddSideDefinitionDialog>{
           side: newSide, 
           changeVector: (newVector) => setState(() => newSide.vector = newVector), 
           captureVector: () => widget.captureVector()
+        ),
+        AnimationStep(
+          side: newSide,
+          changeAnimation: (newAnimation) => setState(() => newSide.animation = newAnimation),
         )
       ], 
       onFinish: () => widget.onFinish(widget.diceProfile, newSide), 

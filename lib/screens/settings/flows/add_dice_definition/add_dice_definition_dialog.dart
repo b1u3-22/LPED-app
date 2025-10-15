@@ -9,6 +9,7 @@
 //
 
 import 'package:app/global/stepped_dialog/stepped_dialog_base.dart';
+import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/dice_definition/dice_definition_detail.dart';
 import 'package:app/models/sensitivity/sensitivity_base.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
@@ -46,7 +47,7 @@ class _AddDiceDefinitionDialogState extends State<AddDiceDefinitionDialog> {
       newProfile.numberOfSides = newNumberOfSides;
       newProfile.sides.clear();
       for (int i = 0; i < newNumberOfSides; i++) {
-        newProfile.sides.add(SideDefinitionListModel(number: (i + 1) * multiplier, vector: [0, 0, 0]));
+        newProfile.sides.add(SideDefinitionListModel.withAnimation(number: (i + 1) * multiplier, vector: [0, 0, 0], animation: AnimationDetailModel.empty()));
       }
     });
   }
@@ -75,6 +76,7 @@ class _AddDiceDefinitionDialogState extends State<AddDiceDefinitionDialog> {
             side: newProfile.sides[i], 
             changeVector: (newVector) => newProfile.sides[i].vector = newVector , 
             captureVector: widget.captureVector, 
+            changeAnimation:(newAnimation) => newProfile.sides[i].animation = newAnimation,
           )
       ], 
 

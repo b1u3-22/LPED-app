@@ -6,7 +6,7 @@
 //
 
 import 'package:app/models/sensitivity/sensitivity_list.dart';
-import 'package:app/screens/settings/sections/profile/sensitivity_drop_down/sensitivity_drop_down_row.dart';
+import 'package:app/screens/settings/sections/profile/sections/sensitivity_drop_down/sensitivity_drop_down_row.dart';
 import 'package:app/services/bluetooth/bluetooth.dart';
 import 'package:flutter/material.dart';
 

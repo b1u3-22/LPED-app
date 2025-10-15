@@ -7,29 +7,28 @@
 
 import 'package:app/global/dialog_action_base.dart';
 import 'package:app/global/dialog_base.dart';
+import 'package:app/models/animation/animation/animation_detail.dart';
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/settings/sections/settings_side_vector_edit.dart';
+import 'package:app/screens/settings/sections/settings_side_animation_edit.dart';
 import 'package:flutter/material.dart';
 
-class UpdateSideDefinitionDialog extends StatefulWidget {
+class UpdateSideDefinitionAnimationDialog extends StatefulWidget {
   final SideDefinitionListModel side;
-  final Future<List<int>>Function() captureVector;
   final Function(SideDefinitionListModel updatedSide) onConfirm;
   final Function() onCancel;
 
-  const UpdateSideDefinitionDialog({
+  const UpdateSideDefinitionAnimationDialog({
     super.key, 
     required this.side,
-    required this.captureVector,
     required this.onConfirm,
     required this.onCancel
   });
 
   @override
-  State<UpdateSideDefinitionDialog> createState() => _UpdateSideDefinitionDialogState();
+  State<UpdateSideDefinitionAnimationDialog> createState() => _UpdateSideDefinitionAnimationDialogState();
 }
 
-class _UpdateSideDefinitionDialogState extends State<UpdateSideDefinitionDialog>{
+class _UpdateSideDefinitionAnimationDialogState extends State<UpdateSideDefinitionAnimationDialog>{
   late SideDefinitionListModel _side;
 
   @override
@@ -38,18 +37,17 @@ class _UpdateSideDefinitionDialogState extends State<UpdateSideDefinitionDialog>
     _side = SideDefinitionListModel.from(widget.side);
   }
 
-  void _updateSide(List<int> newVector) {
-    _side.vector = newVector;
+  void _updateSide(AnimationDetailModel newAnimation) {
+    _side.animation = newAnimation;
   }
 
   @override
   Widget build(BuildContext context) {
     return DialogBase(
-      title: "Edit position of side ${widget.side.number}",
-      content: SettingsSideVectorEdit(
+      title: "Edit animation of side ${widget.side.number}",
+      content: SettingsSideAnimationEdit(
         side: _side, 
-        changeVector: _updateSide, 
-        captureVector: widget.captureVector
+        onChange: (newAnimation) => _updateSide(newAnimation),
       ),
       actions: [
         DialogActionBase(

@@ -6,13 +6,13 @@
 //
 
 import 'package:app/models/side_definition/side_definition_list.dart';
-import 'package:app/screens/settings/flows/update_side_definition/update_side_definition_dialog.dart';
+import 'package:app/screens/settings/flows/update_side_definition_vector/update_side_definition_vector_dialog.dart';
 import 'package:flutter/material.dart';
 
-Future<void> showUpdateSideDefinitionDialog(BuildContext context, SideDefinitionListModel side, Future<List<int>>Function() captureVector, Function(SideDefinitionListModel updatedSide) onConfirm, Function() onCancel) async {
+Future<void> showUpdateSideDefinitionVectorDialog(BuildContext context, SideDefinitionListModel side, Future<List<int>>Function() captureVector, Function(SideDefinitionListModel updatedSide) onConfirm, Function() onCancel) async {
   showDialog(
     context: context, 
-    builder: (_) => UpdateSideDefinitionDialog(
+    builder: (_) => UpdateSideDefinitionVectorDialog(
       side: side,
       captureVector: captureVector,
       onConfirm: onConfirm,

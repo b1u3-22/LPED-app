@@ -2,6 +2,8 @@ import 'package:app/models/animation/animation/animation_base.dart';
 import 'package:app/models/animation/animation/animation_list.dart';
 import 'package:app/models/animation/animation_step/animation_step_base.dart';
 import 'package:app/models/animation/animation_step/animation_step_detail.dart';
+import 'package:app/models/animation/fade_type/fade_type_base.dart';
+import 'package:app/models/animation/pallete/pallete_list.dart';
 
 class AnimationDetailModel extends AnimationListModel {
   late List<AnimationStepDetailModel> steps;
@@ -20,6 +22,24 @@ class AnimationDetailModel extends AnimationListModel {
     }
 
     steps = newSteps;
+  }
+
+  AnimationDetailModel.generateBlink(int number) : super(0, 0) {
+    fadeType = FadeTypeBaseModel.fadeTypeFastValue;
+    steps = [];    
+
+    for (int animationStep = 0; animationStep < number % (AnimationBaseModel.numberOfStepsMaxValue / 2); animationStep++) {
+      steps.add(AnimationStepDetailModel(Pallete.colorRedBright, 1));
+      steps.add(AnimationStepDetailModel(Pallete.colorOff, 1));
+    }
+
+    steps.removeLast(); // remove the last off
+
+    numberOfSteps = steps.length;
+  }
+
+  AnimationDetailModel.empty(): super(0, 0) {
+    steps = [];
   }
 
   @override

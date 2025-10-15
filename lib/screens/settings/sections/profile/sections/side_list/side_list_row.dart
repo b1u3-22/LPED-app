@@ -16,13 +16,15 @@ class SideListRow extends StatelessWidget {
   final Function(String newNumber) onNumberChange;
   final Function() onDelete;
   final Function() onVectorChange; 
+  final Function() onAnimationChange;
 
   const SideListRow({
     super.key,
     required this.model,
     required this.onNumberChange,
     required this.onDelete,
-    required this.onVectorChange
+    required this.onVectorChange,
+    required this.onAnimationChange
   });
 
   @override
@@ -53,14 +55,20 @@ class SideListRow extends StatelessWidget {
             Row(
               children: [
                 IconButton(
-                  onPressed: onDelete, 
-                  icon: Icon(Icons.delete)
-                ),
-                IconButton(
                   onPressed: onVectorChange, 
                   icon: Icon(Icons.my_location),
                   color: Theme.of(context).colorScheme.tertiary,
-                )
+                ),
+                IconButton(
+                  onPressed: onAnimationChange, 
+                  icon: Icon(Icons.animation),
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                IconButton(
+                  onPressed: onDelete, 
+                  icon: Icon(Icons.delete)
+                ),
+                
               ],
             )
           ],
