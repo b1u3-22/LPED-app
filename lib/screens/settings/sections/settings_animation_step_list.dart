@@ -19,7 +19,7 @@ class SettingsAnimationStepList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsList(
+    return Column(
       children: [
         for (int animationStepIndex = 0; animationStepIndex < steps.length; animationStepIndex++)
           SettingsAnimationStepListRow(

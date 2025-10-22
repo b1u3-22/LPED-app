@@ -34,53 +34,47 @@ class SettingsAnimationStepListRowState extends State<SettingsAnimationStepListR
   Widget build(BuildContext context) {
     _model = AnimationStepDetailModel(widget.model.colorIndex, widget.model.duration);
 
-    return Column(
-      children: [
-        FittedBox(
-          child: Card(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SettingsPalleteDropDown(
-                  currentSelectedColor: _model.colorIndex, 
-                  newColorSelected: (newColorIndex) {
-                    setState(() {
-                      _model.colorIndex = newColorIndex;
-                    });
-                    widget.onChange(newColorIndex, _model.duration);
-                  }
-                ),
-                Slider(
-                  min: 0,
-                  max: AnimationStepBaseModel.durationMaxValue.toDouble(),
-                  label: "${((_model.duration + 1) * 100) / 1000}s",
-                  value: _model.duration.toDouble(), 
-                  divisions:  AnimationStepBaseModel.durationMaxValue + 1,
-                  onChanged: (newDuration) {
-                    setState(() {
-                      _model.duration = newDuration.toInt();
-                    });
-                    widget.onChange(_model.colorIndex, newDuration.toInt());
-                  }
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: widget.onDelete, 
-                      icon: Icon(Icons.delete)
-                    ),
-                    IconButton(
-                      onPressed: widget.onCopy, 
-                      icon: Icon(Icons.copy)
-                    ),
-                  ],
-                )
-              ],
-            ),
+    return Card(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SettingsPalleteDropDown(
+            currentSelectedColor: _model.colorIndex, 
+            newColorSelected: (newColorIndex) {
+              setState(() {
+                _model.colorIndex = newColorIndex;
+              });
+              widget.onChange(newColorIndex, _model.duration);
+            }
           ),
-        )
-      ],
+          Slider(
+            min: 0,
+            max: AnimationStepBaseModel.durationMaxValue.toDouble(),
+            label: "${((_model.duration + 1) * 100) / 1000}s",
+            value: _model.duration.toDouble(), 
+            divisions:  AnimationStepBaseModel.durationMaxValue + 1,
+            onChanged: (newDuration) {
+              setState(() {
+                _model.duration = newDuration.toInt();
+              });
+              widget.onChange(_model.colorIndex, newDuration.toInt());
+            }
+          ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: widget.onDelete, 
+                icon: Icon(Icons.delete)
+              ),
+              IconButton(
+                onPressed: widget.onCopy, 
+                icon: Icon(Icons.copy)
+              ),
+            ],
+          )
+        ],
+      ),
     );
   }
 }
