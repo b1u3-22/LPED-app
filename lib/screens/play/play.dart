@@ -30,7 +30,7 @@ class PlayPage extends StatefulWidget {
   @override
   State<PlayPage> createState() => _PlayPageState();
 
-  /// Calculates points for set of given devices based on ruleset: 
+  /// Calculates points for set of given _devices based on ruleset: 
   /// Pair - 100 points 
   /// Triple - 200 points 
   /// For each six - 50 points 
@@ -46,13 +46,13 @@ class PlayPage extends StatefulWidget {
   /// This method is universal and **works** with any number of dice
   /// this does not imply it is **fair** for any number of dice
   /// Same applies to multi-sided dice.
-  static int calculatePoints(List<DevicePlayModel> devices) {
+  static int calculatePoints(List<DevicePlayModel> _devices) {
     // construct help array for number counts
     List<int> counts = [];
     for (int i = 0; i < DiceDefinitionBaseModel.sidesMaxLen; i++) {counts.add(0);}
 
     // calculate occurances for each number
-    for (var device in devices) {
+    for (var device in _devices) {
       if (device.number > 0) counts[device.number]++;
     }
 
@@ -86,17 +86,18 @@ class _PlayPageState extends State<PlayPage>{
   late StreamSubscription<List<ScanResult>> scanSubscription;
   late StreamSubscription<BluetoothAdapterState> adapterStateSubscription;
 
-  List<DevicePlayModel> devices = Storage().getAllDevicesPlayModels();
-  // ignore: prefer_final_fields
-  List<String> _devicesBlacklist = [];
+  List<DevicePlayModel> _devices = Storage().getAllDevicesPlayModels();
   int _sum = 0;
   bool inGame = false;
   List<List<DevicePlayModel>> _deviceGroups = [];
+  int _remainingTime = 0;
+  Timer? _remainingTimeTimer;
+  Timer? _scanKeepAlive;
 
   /// Calculate sum from all currently landed numbers
   int _getSum() {
     int output = 0;
-    for (DevicePlayModel device in devices) {
+    for (DevicePlayModel device in _devices) {
       if (device.visible && device.included && device.number > 0) output += device.number;
     }
     return output;
@@ -116,14 +117,19 @@ class _PlayPageState extends State<PlayPage>{
     setState(() {
       _deviceGroups = deviceGroups;
       inGame = true;
+      _remainingTime = timerLength;
     });
 
     Navigator.of(context).pop();
+
+    _remainingTimeTimer = Timer.periodic(Duration(seconds: 1), (_) => setState(() => _remainingTime = _remainingTime - 1));
 
     Future.delayed(Duration(seconds: timerLength), () => _endGame());
   }
 
   void _endGame() {
+    _remainingTimeTimer?.cancel();
+    setState(() => _remainingTime = 0);
     List<int> scores = [];
     for (var group in _deviceGroups) {
       scores.add(PlayPage.calculatePoints(group));
@@ -149,10 +155,10 @@ class _PlayPageState extends State<PlayPage>{
     });
   }
 
-  /// Get device index inside the devices list
+  /// Get device index inside the _devices list
   int _getDeviceIndexByMac(String mac) {
-    for (int i = 0; i < devices.length; i++) {
-      if (devices[i].mac == mac) return i;
+    for (int i = 0; i < _devices.length; i++) {
+      if (_devices[i].mac == mac) return i;
     }
 
     return -1;
@@ -163,7 +169,7 @@ class _PlayPageState extends State<PlayPage>{
     int deviceIndex = _getDeviceIndexByMac(mac);
     if (deviceIndex < 0) return;
 
-    devices[deviceIndex].updateVisible(visibility);
+    _devices[deviceIndex].updateVisible(visibility);
     update();
   }
 
@@ -172,7 +178,7 @@ class _PlayPageState extends State<PlayPage>{
     int deviceIndex = _getDeviceIndexByMac(mac);
     if (deviceIndex < 0) return;
 
-    devices[deviceIndex].updateIncluded(included);
+    _devices[deviceIndex].updateIncluded(included);
     update();
   }
 
@@ -183,7 +189,7 @@ class _PlayPageState extends State<PlayPage>{
 
     showHistoryConfirmationDialog(
       context, 
-      devices[deviceIndex], 
+      _devices[deviceIndex], 
       () => update()
     );    
   }
@@ -194,7 +200,7 @@ class _PlayPageState extends State<PlayPage>{
 
     for (BluetoothDevice bluetoothDevice in FlutterBluePlus.connectedDevices) {
       if (bluetoothDevice.remoteId.toString() == mac) {
-        LPEDBluetooth.writeAnimation(bluetoothDevice, PredefinedAnimations.identifyAnimation);
+        LPEDBluetooth.writeAnimation(bluetoothDevice, animation);
         break;
       }
     }
@@ -202,9 +208,9 @@ class _PlayPageState extends State<PlayPage>{
 
 void _disconnectFromAllDevices() {
   for (BluetoothDevice bluetoothDevice in FlutterBluePlus.connectedDevices) {
-    if (devices.isEmpty) return;
+    if (_devices.isEmpty) return;
 
-    for (DevicePlayModel device in devices) {
+    for (DevicePlayModel device in _devices) {
       if (device.mac == bluetoothDevice.remoteId.toString()) {
         bluetoothDevice.disconnect();
         break;
@@ -213,8 +219,9 @@ void _disconnectFromAllDevices() {
   }
 }
 
+
 Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
-  // dont try to connect to already connected devices
+  // dont try to connect to already connected _devices
   if (device.isConnected) return;
 
   try {
@@ -238,7 +245,6 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
     // configuration only
     final bool commMode = await LPEDBluetooth.readCommMode(device) ?? false;
     if (!commMode) {
-      _devicesBlacklist.removeWhere((mac) => mac == device.remoteId.toString());
       return;
     }
 
@@ -246,16 +252,14 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
     final StreamSubscription<BluetoothConnectionState> connSub =
         device.connectionState.listen((state) {
       if (state == BluetoothConnectionState.disconnected) {
-        _devicesBlacklist.removeWhere(
-            (mac) => mac == device.remoteId.toString());
         // cancel subscription when disconnected
-        devices[deviceIndex].capStateSubscription?.cancel();
-        devices[deviceIndex].diceNumberSubscription?.cancel();
+        _devices[deviceIndex].capStateSubscription?.cancel();
+        _devices[deviceIndex].diceNumberSubscription?.cancel();
       }
     });
 
     // save connection state
-    devices[deviceIndex].connectionSubscription = connSub;
+    _devices[deviceIndex].connectionSubscription = connSub;
 
     // Enable dock‑mode command
     // await LPEDBluetooth.writeCommand(
@@ -272,12 +276,12 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
     // listen for cap state changes
     final StreamSubscription<List<int>> capStateSubscription = capState.onValueReceived
         .listen((value) {
-          devices[deviceIndex].updateCapState(value[0]);
+          _devices[deviceIndex].updateCapState(value[0]);
           update();
         });
 
     // save the capacitor state subscription
-    devices[deviceIndex].capStateSubscription = capStateSubscription;
+    _devices[deviceIndex].capStateSubscription = capStateSubscription;
 
     // dice status characteristic
     final BluetoothCharacteristic diceNumber = device.servicesList[
@@ -292,42 +296,51 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
         .listen((value) {
       switch (LPEDBluetooth.diceStatusFromNotification(value)) {
         case LPEDBluetooth.diceNumber:
-          devices[deviceIndex]
+          _devices[deviceIndex]
               .updateNumber(LPEDBluetooth.diceNumberFromNotification(value));
           break;
         case LPEDBluetooth.rolling:
-          devices[deviceIndex].updateNumber(PlayCard.rollingValue);
+          _devices[deviceIndex].updateNumber(PlayCard.rollingValue);
           break;
         case LPEDBluetooth.unknown:
-          devices[deviceIndex].updateNumber(PlayCard.unknownValue);
+          _devices[deviceIndex].updateNumber(PlayCard.unknownValue);
           break;
       }
       update();
     });
 
-    devices[deviceIndex].diceNumberSubscription = diceNumberSubscription;
+    _devices[deviceIndex].diceNumberSubscription = diceNumberSubscription;
   } catch (e) {
     // TODO: add error popup
     // remove device so that it can be connected in the future
-    _devicesBlacklist.removeWhere((mac) => mac == device.remoteId.toString());
   }
 }
 
-  /// Start scanning for the non-connectable advertisement from all devices where we saved the MAC address
+  /// Start scanning for the non-connectable advertisement from all _devices where we saved the MAC address
   void _startScan() {
     FlutterBluePlus.startScan(
-      timeout: Duration(hours: 24),
+      timeout: Duration(seconds: 30),
       withRemoteIds: Storage().getAllDevicesMacs(),
       continuousUpdates: true,
-      continuousDivisor: 1
+      continuousDivisor: 1,
+      removeIfGone: Duration(seconds: 5)
     );
 
     scanSubscription = FlutterBluePlus.onScanResults.listen((results) {_translateMessages(results);});
+
+    // The tw a
+    _scanKeepAlive ??= Timer.periodic(Duration(seconds: 32), (_) {
+      print("Refreshing scan");
+      FlutterBluePlus.stopScan();
+      FlutterBluePlus.cancelWhenScanComplete(scanSubscription);
+      _startScan();
+    });
   }
 
   /// Stop scanning for messages
   void _stopScan() {
     if (!FlutterBluePlus.isScanningNow) return;
+    _scanKeepAlive?.cancel();
     FlutterBluePlus.stopScan();
     FlutterBluePlus.cancelWhenScanComplete(scanSubscription);
   }
@@ -342,13 +355,10 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
       int deviceIndex;
 
       for (ScanResult result in results) {
-        if (_devicesBlacklist.contains(result.device.remoteId.toString())) continue;
-
         // check if device is connectable (indicating connection base comunication mode)
         if (result.advertisementData.connectable) {
           _connectDeviceAndSubscribe(result.device);
-          _devicesBlacklist.add(result.device.remoteId.toString());
-
+        
           // skip the rest of the steps that are for non-connectable dice
           continue;
         }
@@ -361,7 +371,7 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
 
         // Check if new id is valid
         id = LPEDBluetooth.idFromMfgData(result.advertisementData.manufacturerData);
-        if (!devices[deviceIndex].isValidId(id)) continue;
+        if (!_devices[deviceIndex].isValidId(id)) continue;
 
         // Split the rest of manufacturer data
         messageType = LPEDBluetooth.messageTypeFromMfgData(result.advertisementData.manufacturerData);
@@ -369,14 +379,14 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
 
         switch(messageType) {
           case LPEDBluetooth.diceNumber: 
-            devices[deviceIndex].updateNumber(message);
+            _devices[deviceIndex].updateNumber(message);
           case LPEDBluetooth.capState:
-            devices[deviceIndex].updateCapState(message);
+            _devices[deviceIndex].updateCapState(message);
           case LPEDBluetooth.rolling:
-            devices[deviceIndex].updateNumber(PlayCard.rollingValue);
-            devices[deviceIndex].updateCapState(message); 
+            _devices[deviceIndex].updateNumber(PlayCard.rollingValue);
+            _devices[deviceIndex].updateCapState(message); 
           case LPEDBluetooth.unknown:
-            devices[deviceIndex].updateNumber(PlayCard.unknownValue);
+            _devices[deviceIndex].updateNumber(PlayCard.unknownValue);
         }
       }
 
@@ -405,7 +415,6 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
     _stopScan();
     _disconnectFromAllDevices();
     adapterStateSubscription.cancel();
-    _devicesBlacklist = [];
     super.dispose();
   }
 
@@ -414,22 +423,30 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
     _stopScan();
     _disconnectFromAllDevices();
     adapterStateSubscription.cancel();
-    _devicesBlacklist = [];
     super.deactivate();
   }
 
   @override
   void activate() {
-    _devicesBlacklist = [];
+    _disconnectFromAllDevices();
     _startScan();
     super.activate();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Padding(
-        padding: EdgeInsets.all(50),
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      floatingActionButton: FloatingActionButton(
+        onPressed:() => showStartGameDialog(
+          context, 
+          _devices, 
+          _startGame, 
+          (List<List<DevicePlayModel>> deviceGroups) => blinkWithDevices(deviceGroups)), 
+        child: Icon(Icons.emoji_events),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -439,38 +456,38 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text("Remaining time: $_remainingTime", style: heading1Style, textAlign: TextAlign.center,),
+                SizedBox(height: 50,),
                 for (int group = 0; group < _deviceGroups.length; group++)
-                  Card(
-                    child: Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Color.fromARGB(
-                            255, 
-                            Pallete.palette[PlayPage.groupColorIndexes[group]].color[0], 
-                            Pallete.palette[PlayPage.groupColorIndexes[group]].color[1], 
-                            Pallete.palette[PlayPage.groupColorIndexes[group]].color[2]
-                          )
-                        ),
-                        borderRadius: BorderRadius.all(Radius.circular(10))
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Color.fromARGB(
+                          255, 
+                          Pallete.palette[PlayPage.groupColorIndexes[group]].color[0], 
+                          Pallete.palette[PlayPage.groupColorIndexes[group]].color[1], 
+                          Pallete.palette[PlayPage.groupColorIndexes[group]].color[2]
+                        )
                       ),
-                      child: Column(
-                        children: [
-                          Wrap(
-                            children: [
-                              for (var device in _deviceGroups[group]) 
-                                PlayCard.fromDevicePlayModel(
-                                  model: device, 
-                                  changeVisibilityCallback: changeVisibilityOfDevice,
-                                  changeInclusionCallback: changeInclusionOfDevice,
-                                  clearHistoryCallback: () => clearHistoryOfDevice(device.mac),
-                                  identifyCallback: (String mac) => blinkWithDevice(mac, PredefinedAnimations.identifyAnimation),
-                                )
-                            ],
-                          ),
-                          Text("Score: ${PlayPage.calculatePoints(_deviceGroups[group])}")
-                        ],
-                      )
+                      borderRadius: BorderRadius.all(Radius.circular(10))
+                    ),
+                    child: Column(
+                      children: [
+                        Wrap(
+                          children: [
+                            for (var device in _deviceGroups[group]) 
+                              PlayCard.fromDevicePlayModel(
+                                model: device, 
+                                changeVisibilityCallback: changeVisibilityOfDevice,
+                                changeInclusionCallback: changeInclusionOfDevice,
+                                clearHistoryCallback: () => clearHistoryOfDevice(device.mac),
+                                identifyCallback: (String mac) => blinkWithDevice(mac, PredefinedAnimations.identifyAnimation),
+                              )
+                          ],
+                        ),
+                        Text("Score: ${PlayPage.calculatePoints(_deviceGroups[group])}")
+                      ],
                     )
                   )
               ],
@@ -484,7 +501,7 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
                 alignment: Alignment.center,
                 child: Wrap(
                   children: [
-                      for (DevicePlayModel device in devices) 
+                      for (DevicePlayModel device in _devices) 
                         if (device.visible) 
                           PlayCard.fromDevicePlayModel(
                           model: device, 
@@ -504,27 +521,12 @@ Future<void> _connectDeviceAndSubscribe(BluetoothDevice device) async {
                 child: Column(
                   children: [
                     Text("Sum: ${_sum.toString()}", style: heading2Style, textAlign: TextAlign.center,),
-                    FittedBox(
-                      child: ElevatedButton(
-                        onPressed: () => showStartGameDialog(
-                          context, 
-                          devices, 
-                          _startGame, 
-                          (List<List<DevicePlayModel>> deviceGroups) => blinkWithDevices(deviceGroups)), 
-                        child: Row(
-                          children: [
-                            Text("New game"),
-                            Icon(Icons.casino)
-                          ],
-                        )
-                      ),
-                    )
                   ],
                 )
               )
           ],
-        )
-      )
+        ),
+      ),
     );
   }
 }
